@@ -30,7 +30,7 @@ type LinearLike = ExcalidrawElement & {
 };
 type Shape = ExcalidrawElement & { boundElements?: readonly { id: string; type: string }[] | null };
 
-const SNAP_EPS = 1.2;
+const SNAP_EPS = 3;
 const EPS = 0.05;
 const SHAPES = new Set(["rectangle", "ellipse", "diamond", "image", "text", "frame", "magicframe", "embeddable", "iframe"]);
 
@@ -72,6 +72,22 @@ function withEndpoint(a: LinearLike, end: End, target: P): Record<string, unknow
 }
 
 const DETACH_PX = 4;
+const SNAP_MATCH_PX = 10;
+const SNAP_TTL_MS = 60000;
+
+/** Aggancio dichiarato dal magnete (click o rilascio su un vertice/metà lato). */
+interface SnapReport {
+  elementId: string;
+  fx: number;
+  fy: number;
+  x: number;
+  y: number;
+  t?: number;
+}
+const pendingSnaps: SnapReport[] = [];
+export function reportSnap(s: SnapReport) {
+  pendingSnaps.push({ ...s, t: Date.now() });
+}
 
 export interface AnchorPrefs {
   start: boolean;
@@ -99,11 +115,30 @@ export function syncAnchors(api: ExcalidrawImperativeAPI, prefs: AnchorPrefs = {
     const anchors: Anchors = { ...(getAnchors(a) ?? {}) };
     let anchorsChanged = false;
     let geom: Record<string, unknown> = {};
+    // Freccia in corso di creazione o trascinata dall'utente: Excalidraw ne tiene un riferimento
+    // interno, quindi non la tocchiamo (al massimo lasciamo cadere un'ancora se la stanno staccando)
+    const busy =
+      st.newElement?.id === a.id ||
+      st.multiElement?.id === a.id ||
+      (st.cursorButton === "down" && (st.selectedLinearElement?.elementId === a.id || st.editingLinearElement?.elementId === a.id));
 
     for (const end of ["start", "end"] as End[]) {
       const pt = endpoint(a, end);
       const binding = end === "start" ? a.startBinding : a.endBinding;
       const bindingKey = end === "start" ? "startBinding" : "endBinding";
+
+      if (busy) {
+        const anchor = anchors[end];
+        const shape = anchor ? byId.get(anchor.elementId) : undefined;
+        if (anchor && shape && !shape.isDeleted && selected[a.id] && !selected[shape.id]) {
+          const target = toScene(shape, anchor.fx, anchor.fy);
+          if (Math.hypot(target[0] - pt[0], target[1] - pt[1]) > DETACH_PX) {
+            delete anchors[end];
+            anchorsChanged = true;
+          }
+        }
+        continue;
+      }
 
       // Estremo con ancore disattivate dalle impostazioni: comportamento nativo
       if (!prefs[end]) {
@@ -121,7 +156,29 @@ export function syncAnchors(api: ExcalidrawImperativeAPI, prefs: AnchorPrefs = {
         shapeUnbind(binding.elementId, a.id);
       }
 
-      // 1) Binding nativo con il punto su un vertice/metà lato → diventa ancora fissa
+      // 1a) Il magnete ha dichiarato un aggancio vicino a questo punto → ancora fissa,
+      //     qualunque cosa Excalidraw abbia fatto nel frattempo al punto o al binding
+      if (!anchors[end]) {
+        const now = Date.now();
+        for (let i = pendingSnaps.length - 1; i >= 0; i--) if (now - (pendingSnaps[i].t ?? 0) > SNAP_TTL_MS) pendingSnaps.splice(i, 1);
+        const idx = pendingSnaps.findIndex((sn) => !(sn.fx === 0 && sn.fy === 0) && sn.elementId !== a.id && Math.hypot(sn.x - pt[0], sn.y - pt[1]) <= SNAP_MATCH_PX);
+        const sn = idx >= 0 ? pendingSnaps[idx] : null;
+        const shape = sn ? byId.get(sn.elementId) : undefined;
+        if (sn && shape && !shape.isDeleted && SHAPES.has(shape.type)) {
+          pendingSnaps.splice(idx, 1);
+          anchors[end] = { elementId: shape.id, fx: sn.fx, fy: sn.fy };
+          anchorsChanged = true;
+          if (binding?.elementId) {
+            geom = { ...geom, [bindingKey]: null };
+            shapeUnbind(binding.elementId, a.id);
+          }
+          const target = toScene(shape, sn.fx, sn.fy);
+          if (Math.hypot(target[0] - pt[0], target[1] - pt[1]) > EPS) geom = { ...geom, ...withEndpoint({ ...a, ...geom } as LinearLike, end, target) };
+          continue;
+        }
+      }
+
+      // 1b) Binding nativo con il punto già su un vertice/metà lato → diventa ancora fissa
       if (binding?.elementId && !anchors[end]) {
         const shape = byId.get(binding.elementId);
         if (shape && !shape.isDeleted && SHAPES.has(shape.type)) {
@@ -151,15 +208,7 @@ export function syncAnchors(api: ExcalidrawImperativeAPI, prefs: AnchorPrefs = {
       const dist = Math.hypot(target[0] - pt[0], target[1] - pt[1]);
       if (dist <= EPS) continue;
 
-      // 2) L'utente sta trascinando la freccia (o un suo punto) con il mouse, senza la figura:
-      //    oltre qualche pixel l'ancora cade. In ogni altro caso il punto torna sull'ancora.
-      const userDragging = st.cursorButton === "down" && !!selected[a.id] && !selected[shape.id];
-      if (userDragging && dist > DETACH_PX) {
-        delete anchors[end];
-        anchorsChanged = true;
-        continue;
-      }
-      if (userDragging) continue;
+      // 2) Il punto torna sull'ancora (il distacco è gestito sopra, mentre l'utente trascina)
       geom = { ...geom, ...withEndpoint({ ...a, ...geom } as LinearLike, end, target) };
     }
 

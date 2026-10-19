@@ -9,10 +9,17 @@
  */
 import type { ExcalidrawImperativeAPI, AppState } from "@excalidraw/excalidraw/types";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
+import { reportSnap } from "./anchors";
 
 const THRESHOLD_PX = 12;
 const SKIP = new Set(["arrow", "line", "freedraw", "selection"]);
 type P = [number, number];
+interface Ref {
+  p: P;
+  id: string;
+  fx: number;
+  fy: number;
+}
 
 export function attachMagnet(api: ExcalidrawImperativeAPI, host: HTMLElement): () => void {
   const dot = document.createElement("div");
@@ -21,23 +28,27 @@ export function attachMagnet(api: ExcalidrawImperativeAPI, host: HTMLElement): (
 
   let cacheEls: readonly ExcalidrawElement[] | null = null;
   let cacheSel = "";
-  let cachePts: P[] = [];
+  let cachePts: Ref[] = [];
 
-  function refPoints(st: AppState): P[] {
+  function refPoints(st: AppState): Ref[] {
     const els = api.getSceneElements();
     const selKey = Object.keys(st.selectedElementIds).join(",");
     if (els === cacheEls && selKey === cacheSel) return cachePts;
-    const pts: P[] = [];
+    const pts: Ref[] = [];
     for (const e of els) {
       if (e.isDeleted || SKIP.has(e.type) || st.selectedElementIds[e.id]) continue;
       const w = e.width, h = e.height;
       const cx = e.x + w / 2, cy = e.y + h / 2;
+      // Posizioni relative (frazioni di larghezza/altezza): vertici, metà lato, centro
       let local: P[];
-      if (e.type === "ellipse") local = [[0, -h / 2], [0, h / 2], [-w / 2, 0], [w / 2, 0], [0, 0]];
-      else if (e.type === "diamond") local = [[0, -h / 2], [w / 2, 0], [0, h / 2], [-w / 2, 0], [w / 4, -h / 4], [w / 4, h / 4], [-w / 4, h / 4], [-w / 4, -h / 4], [0, 0]];
-      else local = [[-w / 2, -h / 2], [w / 2, -h / 2], [w / 2, h / 2], [-w / 2, h / 2], [0, -h / 2], [w / 2, 0], [0, h / 2], [-w / 2, 0], [0, 0]];
+      if (e.type === "ellipse") local = [[0, -0.5], [0, 0.5], [-0.5, 0], [0.5, 0], [0, 0]];
+      else if (e.type === "diamond") local = [[0, -0.5], [0.5, 0], [0, 0.5], [-0.5, 0], [0.25, -0.25], [0.25, 0.25], [-0.25, 0.25], [-0.25, -0.25], [0, 0]];
+      else local = [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5], [0, -0.5], [0.5, 0], [0, 0.5], [-0.5, 0], [0, 0]];
       const cos = Math.cos(e.angle), sin = Math.sin(e.angle);
-      for (const [lx, ly] of local) pts.push([cx + lx * cos - ly * sin, cy + lx * sin + ly * cos]);
+      for (const [fx, fy] of local) {
+        const lx = fx * w, ly = fy * h;
+        pts.push({ p: [cx + lx * cos - ly * sin, cy + lx * sin + ly * cos], id: e.id, fx, fy });
+      }
     }
     cacheEls = els;
     cacheSel = selKey;
@@ -68,19 +79,22 @@ export function attachMagnet(api: ExcalidrawImperativeAPI, host: HTMLElement): (
     const z = st.zoom.value;
     const sx = (ev.clientX - st.offsetLeft) / z - st.scrollX;
     const sy = (ev.clientY - st.offsetTop) / z - st.scrollY;
-    let best: P | null = null;
+    let best: Ref | null = null;
     let bestD = THRESHOLD_PX / z;
-    for (const p of refPoints(st)) {
-      const d = Math.hypot(p[0] - sx, p[1] - sy);
+    for (const r of refPoints(st)) {
+      const d = Math.hypot(r.p[0] - sx, r.p[1] - sy);
       if (d < bestD) {
         bestD = d;
-        best = p;
+        best = r;
       }
     }
     if (!best) return hide();
 
-    const cx = (best[0] + st.scrollX) * z + st.offsetLeft;
-    const cy = (best[1] + st.scrollY) * z + st.offsetTop;
+    // Un click o un rilascio su un punto agganciato: lo dichiariamo alle ancore
+    if (ev.type !== "pointermove") reportSnap({ elementId: best.id, fx: best.fx, fy: best.fy, x: best.p[0], y: best.p[1] });
+
+    const cx = (best.p[0] + st.scrollX) * z + st.offsetLeft;
+    const cy = (best.p[1] + st.scrollY) * z + st.offsetTop;
     Object.defineProperty(ev, "clientX", { value: cx, configurable: true });
     Object.defineProperty(ev, "clientY", { value: cy, configurable: true });
     const r = host.getBoundingClientRect();
