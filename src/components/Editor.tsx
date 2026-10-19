@@ -8,12 +8,14 @@ import { ShareDialog } from "./ShareDialog";
 import { FavoriteColors, type CurrentColors } from "./FavoriteColors";
 import { ExportPdfDialog } from "./ExportPdfDialog";
 import { attachMagnet } from "../lib/magnet";
+import { syncAnchors } from "../lib/anchors";
+import { applyPaperVars } from "../lib/paperVars";
 import { LogoMark } from "./Logo";
 import { useStore, touchBoard, updateBoard, trashBoard, restoreBoard, duplicateBoard } from "../lib/store";
 import { loadBoardData, saveBoardData, EMPTY_BOARD } from "../lib/db";
 import { navigate } from "../lib/router";
 import type { BoardData, BoardMeta, Paper, PaperSize, PaperType } from "../lib/types";
-import { DEFAULT_PAPER, PAPER_STEP } from "../lib/types";
+import { DEFAULT_PAPER } from "../lib/types";
 import { makeThumbnail } from "../lib/thumbnail";
 import { downloadExcalidrawFile } from "../lib/files";
 import { boardTitle } from "../lib/format";
@@ -28,6 +30,8 @@ export function Editor({ id, theme }: { id: string; theme: "light" | "dark" }) {
   const meta = boards.find((b) => b.id === id);
   const [initial, setInitial] = useState<BoardData | undefined>(undefined);
   const [api, setApi] = useState<ExcalidrawImperativeAPI | null>(null);
+  const apiRef = useRef<ExcalidrawImperativeAPI | null>(null);
+  apiRef.current = api;
   const [saveState, setSaveState] = useState<SaveState>("saved");
   const [sharing, setSharing] = useState(false);
   const [moving, setMoving] = useState(false);
@@ -86,6 +90,8 @@ export function Editor({ id, theme }: { id: string; theme: "light" | "dark" }) {
   async function changePaper(patch: Partial<Paper>) {
     const next = { ...paper, ...patch };
     setPaper(next);
+    const st = apiRef.current?.getAppState();
+    if (st) applyPaperVars(paperRef.current, next, st.scrollX, st.scrollY, st.zoom.value);
     const data = latest.current;
     if (!data) return;
     latest.current = { ...data, appState: { ...data.appState, paper: next } };
@@ -106,13 +112,9 @@ export function Editor({ id, theme }: { id: string; theme: "light" | "dark" }) {
       };
       setColors((c) => (c.stroke === next.stroke && c.background === next.background && c.hasSelection === next.hasSelection ? c : next));
       // Il foglio (righe/quadretti/puntini) segue pan e zoom della tela
-      const el = paperRef.current;
-      if (el) {
-        const z = appState.zoom.value;
-        el.style.setProperty("--zoom", String(z));
-        el.style.setProperty("--px", `${appState.scrollX * z}px`);
-        el.style.setProperty("--py", `${appState.scrollY * z}px`);
-      }
+      applyPaperVars(paperRef.current, latest.current?.appState.paper ?? DEFAULT_PAPER, appState.scrollX, appState.scrollY, appState.zoom.value);
+      // Punti ancorati a vertici/metà lato: li riportiamo in posizione se la figura si è mossa
+      if (apiRef.current && syncAnchors(apiRef.current)) return;
       const data: BoardData = {
         elements,
         appState: {
@@ -229,7 +231,6 @@ export function Editor({ id, theme }: { id: string; theme: "light" | "dark" }) {
         <div
           ref={paperRef}
           className={`paper paper-${paper.type}`}
-          style={{ "--step": `${paper.type === "blank" ? 24 : PAPER_STEP[paper.type][paper.size]}px` } as React.CSSProperties}
           aria-hidden="true"
         />
         {initial === undefined ? (

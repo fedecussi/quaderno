@@ -1291,11 +1291,11 @@ kbd {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  --step: 24px;
-  --zoom: 1;
+  --size: 24px;
+  --dot: 1.3px;
   --px: 0px;
   --py: 0px;
-  --size: calc(var(--step) * var(--zoom));
+  --fade: 1;
   --ink: #c4c9d4;
   background-color: #fff;
   display: none;
@@ -1319,9 +1319,21 @@ kbd {
 }
 .paper-dots {
   --ink: #aeb4c0;
-  background-image: radial-gradient(circle, var(--ink) 1.3px, transparent 1.6px);
+  background-image: radial-gradient(circle, var(--ink) var(--dot), transparent calc(var(--dot) + 0.5px));
   background-size: var(--size) var(--size);
-  background-position: calc(var(--px) - 1px) calc(var(--py) - 1px);
+  background-position: calc(var(--px) - var(--size) / 2) calc(var(--py) - var(--size) / 2);
+}
+.has-paper .paper::after {
+  /* schiarisce la trama quando si è molto rimpiccioliti */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: calc(1 - var(--fade));
+  pointer-events: none;
+}
+:root[data-theme="dark"] .has-paper .paper::after {
+  background: #000;
 }
 /* In tema scuro la tela è scura: si usa "screen" con un foglio nero e linee chiare */
 :root[data-theme="dark"] .paper {

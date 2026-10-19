@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Excalidraw, MainMenu } from "@excalidraw/excalidraw";
 import type { AppState } from "@excalidraw/excalidraw/types";
 import { Lock, Download, BookmarkPlus, Loader2, AlertTriangle, FileDown } from "lucide-react";
@@ -11,7 +11,7 @@ import { navigate } from "../lib/router";
 import { makeThumbnail } from "../lib/thumbnail";
 import { downloadExcalidrawFile } from "../lib/files";
 import { boardTitle, relativeTime } from "../lib/format";
-import { PAPER_STEP } from "../lib/types";
+import { applyPaperVars } from "../lib/paperVars";
 import { useRef } from "react";
 
 export function SharedView({ payload: fragment, theme }: { payload: string; theme: "light" | "dark" }) {
@@ -124,16 +124,9 @@ export function SharedView({ payload: fragment, theme }: { payload: string; them
         </Button>
       </header>
       <div className={`editor-canvas ${paper.type !== "blank" ? "has-paper" : ""}`}>
-        <div ref={paperRef} className={`paper paper-${paper.type}`} style={{ "--step": `${paper.type === "blank" ? 24 : PAPER_STEP[paper.type][paper.size]}px` } as React.CSSProperties} aria-hidden="true" />
+        <div ref={paperRef} className={`paper paper-${paper.type}`} aria-hidden="true" />
         <Excalidraw
-          onChange={(_els, appState) => {
-            const el = paperRef.current;
-            if (!el) return;
-            const z = appState.zoom.value;
-            el.style.setProperty("--zoom", String(z));
-            el.style.setProperty("--px", `${appState.scrollX * z}px`);
-            el.style.setProperty("--py", `${appState.scrollY * z}px`);
-          }}
+          onChange={(_els, appState) => applyPaperVars(paperRef.current, paper, appState.scrollX, appState.scrollY, appState.zoom.value)}
           initialData={{ elements: payload.data.elements, appState: { ...payload.data.appState, theme } as Partial<AppState>, files: payload.data.files, scrollToContent: true }}
           viewModeEnabled
           theme={theme}
