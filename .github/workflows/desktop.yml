@@ -4,6 +4,11 @@ on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Versione da rilasciare (es. 0.1.0). Vuoto = solo artefatti, senza release"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -22,17 +27,28 @@ jobs:
         run: npm run dist:mac
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      - name: Estensione Chrome
+        run: |
+          npm run build:ext
+          (cd dist-extension && zip -qr ../release/quaderno-estensione-chrome.zip .)
       - uses: actions/upload-artifact@v4
         with:
           name: Quaderno-macOS
           path: |
             release/*.dmg
             release/*.zip
-      - name: Release (solo per i tag)
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.version != ''
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('v{0}', inputs.version) }}
+          name: Quaderno ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('v{0}', inputs.version) }}
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: true
+          body: |
+            **App per Mac**: `Quaderno-<versione>-arm64.dmg` per Apple Silicon, `Quaderno-<versione>.dmg` per Intel. Al primo avvio: *Impostazioni di Sistema → Privacy e sicurezza → Apri comunque*, oppure `xattr -cr /Applications/Quaderno.app`.
+            **Estensione Chrome**: `quaderno-estensione-chrome.zip`, da scompattare e caricare in `chrome://extensions` con "Carica estensione non pacchettizzata".
+            **Web**: https://fedecussi.github.io/quaderno/
           files: |
             release/*.dmg
             release/*.zip
-          generate_release_notes: true

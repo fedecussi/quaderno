@@ -48,7 +48,7 @@ Dentro l'estensione i link condivisi devono puntare alla versione pubblicata: in
 
 L'app nativa è un contenitore Electron della stessa build web, con menu macOS, finestra che ricorda dimensione e posizione, download tramite finestra di salvataggio di sistema e link esterni aperti nel browser.
 
-- **Scaricarla**: ogni tag `v*` fa costruire dal workflow `desktop.yml` (runner macOS) i file `.dmg` e `.zip` per Apple Silicon e Intel e li allega a una [Release](https://github.com/fedecussi/quaderno/releases). Si può anche avviare a mano da *Actions → App desktop (macOS) → Run workflow* e scaricare l'artefatto.
+- **Scaricarla**: dalle [Release](https://github.com/fedecussi/quaderno/releases). Per pubblicarne una nuova: *Actions → App desktop (macOS) → Run workflow* indicando la versione (es. `0.2.0`): il workflow costruisce `.dmg` e `.zip` per Apple Silicon e Intel più lo zip dell'estensione Chrome, crea il tag e la release. Funziona anche spingendo un tag `v*`.
 - **Primo avvio**: l'app non è firmata con un certificato Apple, quindi macOS la blocca una volta. Apri *Impostazioni di Sistema → Privacy e sicurezza* e premi *Apri comunque*, oppure da Terminale: `xattr -cr /Applications/Quaderno.app`.
 - **In locale**: `npm run desktop` avvia l'app in sviluppo; `npm run dist:mac` crea i pacchetti in `release/` (serve un Mac).
 
