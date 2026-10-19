@@ -66,8 +66,9 @@ export interface Settings {
   sort: SortMode;
   /** URL pubblico dell'app, usato come base per i link condivisi (utile nell'estensione). */
   publicUrl: string;
-  /** Colori preferiti (hex o "transparent"), condivisi tra tratto e sfondo. */
-  favoriteColors: string[];
+  /** Colori preferiti per tratto e sfondo (esadecimali). */
+  favoriteStrokeColors: string[];
+  favoriteBackgroundColors: string[];
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -75,5 +76,6 @@ export const DEFAULT_SETTINGS: Settings = {
   view: "grid",
   sort: "updated",
   publicUrl: "",
-  favoriteColors: [],
+  favoriteStrokeColors: [],
+  favoriteBackgroundColors: [],
 };

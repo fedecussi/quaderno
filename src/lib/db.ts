@@ -77,8 +77,11 @@ export function newCollection(name: string, emoji = "📁"): Collection {
 /* ---------- Impostazioni ---------- */
 
 export async function loadSettings(): Promise<Settings> {
-  const s = await get<Partial<Settings>>(K_SETTINGS, store);
-  return { ...DEFAULT_SETTINGS, ...(s ?? {}) };
+  const s = (await get<Partial<Settings> & { favoriteColors?: string[] }>(K_SETTINGS, store)) ?? {};
+  // Migrazione: la vecchia lista unica diventa la lista del tratto
+  if (s.favoriteColors && !s.favoriteStrokeColors) s.favoriteStrokeColors = s.favoriteColors;
+  delete s.favoriteColors;
+  return { ...DEFAULT_SETTINGS, ...s };
 }
 export async function saveSettings(s: Settings) {
   await set(K_SETTINGS, s, store);

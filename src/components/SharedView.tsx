@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Excalidraw, MainMenu } from "@excalidraw/excalidraw";
 import type { AppState } from "@excalidraw/excalidraw/types";
-import { Lock, Download, BookmarkPlus, Loader2, AlertTriangle } from "lucide-react";
+import { Lock, Download, BookmarkPlus, Loader2, AlertTriangle, FileDown } from "lucide-react";
+import { ExportPdfDialog } from "./ExportPdfDialog";
 import { Button, toast } from "./ui";
 import { Logo, LogoMark } from "./Logo";
 import { decodeShare, shareNeedsPassword, SharePasswordRequired, ShareInvalid, type SharePayload } from "../lib/share";
@@ -19,6 +20,7 @@ export function SharedView({ payload: fragment, theme }: { payload: string; them
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [pdfOpen, setPdfOpen] = useState(false);
 
   async function open(pw?: string) {
     setBusy(true);
@@ -111,6 +113,9 @@ export function SharedView({ payload: fragment, theme }: { payload: string; them
           <span className="muted small crumb">· {relativeTime(payload.sharedAt)}</span>
         </div>
         <div className="grow" />
+        <Button variant="ghost" size="sm" icon={<FileDown size={16} />} onClick={() => setPdfOpen(true)}>
+          PDF
+        </Button>
         <Button variant="ghost" size="sm" icon={<Download size={16} />} onClick={() => downloadExcalidrawFile(meta, payload.data)}>
           Scarica
         </Button>
@@ -143,6 +148,7 @@ export function SharedView({ payload: fragment, theme }: { payload: string; them
           </MainMenu>
         </Excalidraw>
       </div>
+      {pdfOpen && <ExportPdfDialog data={payload.data} title={payload.title} selectedIds={{}} theme={theme} onClose={() => setPdfOpen(false)} />}
     </div>
   );
 }

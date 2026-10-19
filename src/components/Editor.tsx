@@ -2,10 +2,12 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Excalidraw, MainMenu, WelcomeScreen, getSceneVersion } from "@excalidraw/excalidraw";
 import type { ExcalidrawImperativeAPI, AppState, BinaryFiles } from "@excalidraw/excalidraw/types";
 import type { OrderedExcalidrawElement } from "@excalidraw/excalidraw/element/types";
-import { ArrowLeft, Share2, MoreHorizontal, Star, Copy, Download, Trash2, FolderInput, Check, Loader2, Grid3x3 } from "lucide-react";
+import { ArrowLeft, Share2, MoreHorizontal, Star, Copy, Download, Trash2, FolderInput, Check, Loader2, Grid3x3, FileDown } from "lucide-react";
 import { Button, Menu, Modal, toast, useMenu } from "./ui";
 import { ShareDialog } from "./ShareDialog";
-import { ColorFavorites, type CurrentColors } from "./ColorFavorites";
+import { FavoriteColors, type CurrentColors } from "./FavoriteColors";
+import { ExportPdfDialog } from "./ExportPdfDialog";
+import { attachMagnet } from "../lib/magnet";
 import { LogoMark } from "./Logo";
 import { useStore, touchBoard, updateBoard, trashBoard, restoreBoard, duplicateBoard } from "../lib/store";
 import { loadBoardData, saveBoardData, EMPTY_BOARD } from "../lib/db";
@@ -30,6 +32,8 @@ export function Editor({ id, theme }: { id: string; theme: "light" | "dark" }) {
   const [sharing, setSharing] = useState(false);
   const [moving, setMoving] = useState(false);
   const [colors, setColors] = useState<CurrentColors>({ stroke: "#1e1e1e", background: "transparent", hasSelection: false });
+  const [pdfOpen, setPdfOpen] = useState(false);
+  const canvasHost = useRef<HTMLDivElement>(null);
   const menu = useMenu();
   const paperMenu = useMenu();
   const [paper, setPaper] = useState<Paper>(DEFAULT_PAPER);
@@ -147,6 +151,12 @@ export function Editor({ id, theme }: { id: string; theme: "light" | "dark" }) {
     };
   }, [persist]);
 
+  // Magnete per i punti di linee e frecce (vertici, metà lato, centro delle figure)
+  useEffect(() => {
+    if (!api || !canvasHost.current) return;
+    return attachMagnet(api, canvasHost.current);
+  }, [api]);
+
   // Tema di Excalidraw e dell'app sincronizzati
   useEffect(() => {
     api?.updateScene({ appState: { theme } });
@@ -215,7 +225,7 @@ export function Editor({ id, theme }: { id: string; theme: "light" | "dark" }) {
         <Button variant="ghost" size="sm" icon={<MoreHorizontal size={18} />} aria-label="Altre opzioni" onClick={menu.open} />
       </header>
 
-      <div className={`editor-canvas ${paper.type !== "blank" ? "has-paper" : ""}`}>
+      <div ref={canvasHost} className={`editor-canvas ${paper.type !== "blank" ? "has-paper" : ""}`}>
         <div
           ref={paperRef}
           className={`paper paper-${paper.type}`}
@@ -246,7 +256,6 @@ export function Editor({ id, theme }: { id: string; theme: "light" | "dark" }) {
             langCode="it-IT"
             name={boardTitle(meta.title)}
             autoFocus
-            renderTopRightUI={() => <ColorFavorites api={api} current={colors} />}
             UIOptions={{
               canvasActions: {
                 toggleTheme: false,
@@ -263,6 +272,9 @@ export function Editor({ id, theme }: { id: string; theme: "light" | "dark" }) {
               </MainMenu.Item>
               <MainMenu.Separator />
               <MainMenu.DefaultItems.SaveAsImage />
+              <MainMenu.Item onSelect={() => setPdfOpen(true)} icon={<FileDown size={16} />}>
+                Esporta in PDF…
+              </MainMenu.Item>
               <MainMenu.DefaultItems.Export />
               <MainMenu.DefaultItems.SearchMenu />
               <MainMenu.DefaultItems.Help />
@@ -325,6 +337,8 @@ export function Editor({ id, theme }: { id: string; theme: "light" | "dark" }) {
             },
           },
           { label: "Sposta in raccolta…", icon: <FolderInput size={15} />, onSelect: () => setMoving(true) },
+          { separator: true, label: "" },
+          { label: "Esporta in PDF…", icon: <FileDown size={15} />, onSelect: () => setPdfOpen(true) },
           {
             label: "Scarica .excalidraw",
             icon: <Download size={15} />,
@@ -359,6 +373,10 @@ export function Editor({ id, theme }: { id: string; theme: "light" | "dark" }) {
       </Modal>
 
       {sharing && <ShareDialog board={meta} data={latest.current ?? undefined} onClose={() => setSharing(false)} />}
+      {pdfOpen && latest.current && (
+        <ExportPdfDialog data={latest.current} title={meta.title} selectedIds={api?.getAppState().selectedElementIds ?? {}} theme={theme} onClose={() => setPdfOpen(false)} />
+      )}
+      <FavoriteColors api={api} root={canvasHost.current} current={colors} />
     </div>
   );
 }

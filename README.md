@@ -7,8 +7,9 @@ Lavagne infinite per appunti, schemi e idee. Un'app web leggera costruita sopra 
 - **Salvataggio automatico** in locale (IndexedDB): niente account, niente server
 - **Link condivisibili** senza backend: la lavagna viene compressa e cifrata nel browser e messa nel link stesso. Chi lo apre la vede in sola lettura e può salvarne una copia. Opzionale: **protezione con password**
 - **Fogli** bianchi, a righe, a quadretti (tre misure) o puntinati, che seguono zoom e scorrimento
-- **Colori preferiti**: scegli qualsiasi colore (selettore o esadecimale), salvalo e applicalo a tratto o sfondo con un clic
-- **Aggancio a vertici e metà lato** delle figure quando disegni linee e frecce (attivo di default, Alt per disattivarlo al volo)
+- **Colori preferiti** dentro le sezioni Tratto e Sfondo del pannello: scegli qualsiasi colore con il selettore di sistema (“+”), salvalo con “salva” e applicalo con un clic
+- **Magnete per linee e frecce**: i punti scattano su vertici, metà lato e centro delle figure vicine, e il collegamento resta agganciato (Ctrl/Cmd per disattivarlo al volo)
+- **Esportazione PDF** a 1×, 2×, 3× o 4× (96–384 dpi), pagina su misura, A4 o A3, con o senza sfondo e foglio
 - **Tema chiaro** di default, scuro o di sistema a scelta; interfaccia in italiano
 - **Import/export** di file `.excalidraw`, esportazione PNG/SVG dal menu dell'editor
 - **PWA installabile** su Mac (Chrome: "Installa app"; Safari: "Aggiungi al Dock") e **estensione Chrome** (Manifest V3)
@@ -54,7 +55,7 @@ Limiti: il link è una "fotografia" della lavagna (le modifiche successive non s
 
 ## Note
 
-Il foglio (righe, quadretti, puntini) è disegnato sotto la tela e fuso con essa: compare nell'editor e nei link condivisi, non nelle immagini esportate.
+Il foglio (righe, quadretti, puntini) è disegnato sotto la tela e fuso con essa: compare nell'editor, nei link condivisi e nei PDF, non nelle immagini PNG/SVG esportate dal menu di Excalidraw.
 
 ## Struttura
 

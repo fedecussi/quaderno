@@ -1282,169 +1282,6 @@ kbd {
 }
 
 /* ===========================================================
-   Colori preferiti (pannello nell'editor)
-   =========================================================== */
-.colorfav {
-  position: relative;
-  pointer-events: all;
-  margin-right: 8px;
-}
-.colorfav-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 36px;
-  padding: 0 10px;
-  border-radius: 10px;
-  border: 1px solid transparent;
-  background: var(--bg-elev);
-  color: var(--text);
-  box-shadow: 0 0 0 1px var(--border);
-  cursor: pointer;
-}
-.colorfav-btn:hover,
-.colorfav-btn.on {
-  background: var(--accent-soft);
-}
-.colorfav-dots {
-  display: inline-flex;
-  gap: 3px;
-}
-.colorfav-dots i {
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
-}
-.colorfav-dots i.none {
-  background: linear-gradient(135deg, transparent 45%, var(--danger) 45% 55%, transparent 55%);
-}
-.colorfav-pop {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  width: 272px;
-  padding: 12px;
-  background: var(--bg-elev);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: var(--shadow-lg);
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  animation: pop 0.14s var(--ease);
-  font-family: var(--font);
-  font-size: 13px;
-}
-.colorfav-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.seg-sm button {
-  width: auto;
-  padding: 0 9px;
-  height: 24px;
-  font-size: 12px;
-}
-.colorfav-hint {
-  font-size: 12px;
-  color: var(--text-3);
-  margin-top: -4px;
-}
-.colorfav-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 28px);
-  gap: 7px;
-}
-.swatch-wrap {
-  position: relative;
-}
-.swatch {
-  width: 28px;
-  height: 28px;
-  border-radius: 7px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  cursor: pointer;
-  padding: 0;
-  display: grid;
-  place-items: center;
-  transition: transform 0.1s;
-}
-.swatch:hover {
-  transform: scale(1.08);
-}
-.swatch.on {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-.swatch-none,
-.swatch-current {
-  background: linear-gradient(135deg, transparent 46%, var(--danger) 46% 54%, transparent 54%), var(--bg-sunken);
-  color: var(--text-2);
-}
-.swatch-pick {
-  background: var(--bg-sunken);
-  color: var(--text-2);
-  border-style: dashed;
-  position: relative;
-  overflow: hidden;
-}
-.swatch-pick input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-.swatch-x {
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  width: 15px;
-  height: 15px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--bg-elev);
-  color: var(--text-2);
-  display: none;
-  place-items: center;
-  cursor: pointer;
-  padding: 0;
-}
-.swatch-wrap:hover .swatch-x {
-  display: grid;
-}
-.colorfav-empty {
-  font-size: 12px;
-  color: var(--text-3);
-}
-.colorfav-hex {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border);
-}
-.colorfav-hex .swatch-current {
-  flex: none;
-  width: 26px;
-  height: 26px;
-  cursor: default;
-}
-.colorfav-hex .input {
-  height: 30px;
-  padding: 0 8px;
-  min-width: 0;
-  flex: 1;
-}
-.colorfav-hex .btn {
-  flex: none;
-  padding: 0 8px;
-}
-
-/* ===========================================================
    Foglio: righe / quadretti / puntini sotto la tela
    =========================================================== */
 .editor-canvas {
@@ -1496,4 +1333,179 @@ kbd {
 }
 :root[data-theme="dark"] .has-paper .excalidraw__canvas.static {
   mix-blend-mode: screen;
+}
+
+/* ===========================================================
+   Preferiti dentro il pannello Tratto / Sfondo di Excalidraw
+   =========================================================== */
+.qd-fav {
+  margin-top: 6px;
+}
+.qd-fav-row {
+  font-family: var(--font);
+  font-size: 11.5px;
+  color: var(--text-2);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.qd-fav-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--text-3);
+  letter-spacing: 0.02em;
+}
+.qd-fav-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 5px;
+}
+.qd-fav-save:hover:not(:disabled) {
+  background: var(--accent-soft);
+}
+.qd-fav-save:disabled {
+  color: var(--text-3);
+  cursor: default;
+}
+.qd-fav-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.qd-swatch-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.qd-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  padding: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: transform 0.1s;
+}
+.qd-swatch:hover {
+  transform: scale(1.1);
+}
+.qd-swatch.on {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.qd-pick {
+  background: var(--bg-sunken);
+  color: var(--text-2);
+  border-style: dashed;
+  position: relative;
+  overflow: hidden;
+  font-size: 15px;
+  line-height: 1;
+}
+.qd-pick input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.qd-swatch-x {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--text-2);
+  display: none;
+  place-items: center;
+  cursor: pointer;
+  padding: 0;
+}
+.qd-swatch-wrap:hover .qd-swatch-x {
+  display: grid;
+}
+.qd-fav-empty {
+  color: var(--text-3);
+  font-size: 11px;
+}
+
+/* Indicatore del magnete (vertici / metà lato) */
+.magnet-dot {
+  position: absolute;
+  left: -7px;
+  top: -7px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  pointer-events: none;
+  z-index: 5;
+  display: none;
+}
+
+/* Dialogo PDF */
+.pdf-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pdf-section + .pdf-section {
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.pdf-section h3 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-3);
+}
+.pdf-scales {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.pdf-scale {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--text-3);
+}
+.pdf-scale strong {
+  font-size: 15px;
+  color: var(--text);
+}
+.pdf-scale.on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.seg-wide {
+  width: 100%;
+}
+.seg-wide button {
+  flex: 1;
+  width: auto;
+  padding: 0 10px;
+  font-size: 13px;
 }
