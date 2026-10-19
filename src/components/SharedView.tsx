@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Excalidraw, MainMenu } from "@excalidraw/excalidraw";
 import type { AppState } from "@excalidraw/excalidraw/types";
 import { Lock, Download, BookmarkPlus, Loader2, AlertTriangle } from "lucide-react";
@@ -10,6 +10,8 @@ import { navigate } from "../lib/router";
 import { makeThumbnail } from "../lib/thumbnail";
 import { downloadExcalidrawFile } from "../lib/files";
 import { boardTitle, relativeTime } from "../lib/format";
+import { PAPER_STEP } from "../lib/types";
+import { useRef } from "react";
 
 export function SharedView({ payload: fragment, theme }: { payload: string; theme: "light" | "dark" }) {
   const [payload, setPayload] = useState<SharePayload | null>(null);
@@ -93,6 +95,8 @@ export function SharedView({ payload: fragment, theme }: { payload: string; them
     );
   }
 
+  const paper = payload.data.appState.paper ?? { type: "blank" as const, size: "m" as const };
+  const paperRef = useRef<HTMLDivElement>(null);
   const meta = { id: "shared", title: payload.title, collectionId: null, favorite: false, createdAt: payload.sharedAt, updatedAt: payload.sharedAt, deletedAt: null, elementCount: 0 };
 
   return (
@@ -114,8 +118,17 @@ export function SharedView({ payload: fragment, theme }: { payload: string; them
           Salva nel mio Quaderno
         </Button>
       </header>
-      <div className="editor-canvas">
+      <div className={`editor-canvas ${paper.type !== "blank" ? "has-paper" : ""}`}>
+        <div ref={paperRef} className={`paper paper-${paper.type}`} style={{ "--step": `${paper.type === "blank" ? 24 : PAPER_STEP[paper.type][paper.size]}px` } as React.CSSProperties} aria-hidden="true" />
         <Excalidraw
+          onChange={(_els, appState) => {
+            const el = paperRef.current;
+            if (!el) return;
+            const z = appState.zoom.value;
+            el.style.setProperty("--zoom", String(z));
+            el.style.setProperty("--px", `${appState.scrollX * z}px`);
+            el.style.setProperty("--py", `${appState.scrollY * z}px`);
+          }}
           initialData={{ elements: payload.data.elements, appState: { ...payload.data.appState, theme } as Partial<AppState>, files: payload.data.files, scrollToContent: true }}
           viewModeEnabled
           theme={theme}

@@ -1,20 +1,25 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Excalidraw, MainMenu, WelcomeScreen, getSceneVersion } from "@excalidraw/excalidraw";
 import type { ExcalidrawImperativeAPI, AppState, BinaryFiles } from "@excalidraw/excalidraw/types";
 import type { OrderedExcalidrawElement } from "@excalidraw/excalidraw/element/types";
-import { ArrowLeft, Share2, MoreHorizontal, Star, Copy, Download, Trash2, FolderInput, Check, Loader2 } from "lucide-react";
+import { ArrowLeft, Share2, MoreHorizontal, Star, Copy, Download, Trash2, FolderInput, Check, Loader2, Grid3x3 } from "lucide-react";
 import { Button, Menu, Modal, toast, useMenu } from "./ui";
 import { ShareDialog } from "./ShareDialog";
+import { ColorFavorites, type CurrentColors } from "./ColorFavorites";
 import { LogoMark } from "./Logo";
 import { useStore, touchBoard, updateBoard, trashBoard, restoreBoard, duplicateBoard } from "../lib/store";
 import { loadBoardData, saveBoardData, EMPTY_BOARD } from "../lib/db";
 import { navigate } from "../lib/router";
-import type { BoardData, BoardMeta } from "../lib/types";
+import type { BoardData, BoardMeta, Paper, PaperSize, PaperType } from "../lib/types";
+import { DEFAULT_PAPER, PAPER_STEP } from "../lib/types";
 import { makeThumbnail } from "../lib/thumbnail";
 import { downloadExcalidrawFile } from "../lib/files";
 import { boardTitle } from "../lib/format";
 
 type SaveState = "saved" | "dirty" | "saving";
+
+const PAPER_LABEL: Record<PaperType, string> = { blank: "Bianco", lines: "Righe", squares: "Quadretti", dots: "Puntini" };
+const SIZE_LABEL: Record<PaperSize, string> = { s: "Piccoli", m: "Medi", l: "Grandi" };
 
 export function Editor({ id, theme }: { id: string; theme: "light" | "dark" }) {
   const { boards, collections } = useStore();
@@ -24,7 +29,11 @@ export function Editor({ id, theme }: { id: string; theme: "light" | "dark" }) {
   const [saveState, setSaveState] = useState<SaveState>("saved");
   const [sharing, setSharing] = useState(false);
   const [moving, setMoving] = useState(false);
+  const [colors, setColors] = useState<CurrentColors>({ stroke: "#1e1e1e", background: "transparent", hasSelection: false });
   const menu = useMenu();
+  const paperMenu = useMenu();
+  const [paper, setPaper] = useState<Paper>(DEFAULT_PAPER);
+  const paperRef = useRef<HTMLDivElement>(null);
 
   const latest = useRef<BoardData | null>(null);
   const lastSavedVersion = useRef<number>(-1);
@@ -41,6 +50,7 @@ export function Editor({ id, theme }: { id: string; theme: "light" | "dark" }) {
       const data = d ?? EMPTY_BOARD;
       latest.current = data;
       lastSavedVersion.current = getSceneVersion(data.elements);
+      setPaper(data.appState.paper ?? DEFAULT_PAPER);
       setInitial(data);
     });
     return () => {
@@ -69,14 +79,43 @@ export function Editor({ id, theme }: { id: string; theme: "light" | "dark" }) {
     [id],
   );
 
+  async function changePaper(patch: Partial<Paper>) {
+    const next = { ...paper, ...patch };
+    setPaper(next);
+    const data = latest.current;
+    if (!data) return;
+    latest.current = { ...data, appState: { ...data.appState, paper: next } };
+    await saveBoardData(id, latest.current);
+    await touchBoard(id, {});
+  }
+
   const onChange = useCallback(
     (elements: readonly OrderedExcalidrawElement[], appState: AppState, files: BinaryFiles) => {
       const version = getSceneVersion(elements);
+      // Colore corrente per il pannello dei preferiti (dalla selezione, altrimenti dallo strumento)
+      const sel = appState.selectedElementIds;
+      const first = elements.find((e) => sel[e.id] && !e.isDeleted);
+      const next: CurrentColors = {
+        stroke: first ? first.strokeColor : appState.currentItemStrokeColor,
+        background: first ? first.backgroundColor : appState.currentItemBackgroundColor,
+        hasSelection: !!first,
+      };
+      setColors((c) => (c.stroke === next.stroke && c.background === next.background && c.hasSelection === next.hasSelection ? c : next));
+      // Il foglio (righe/quadretti/puntini) segue pan e zoom della tela
+      const el = paperRef.current;
+      if (el) {
+        const z = appState.zoom.value;
+        el.style.setProperty("--zoom", String(z));
+        el.style.setProperty("--px", `${appState.scrollX * z}px`);
+        el.style.setProperty("--py", `${appState.scrollY * z}px`);
+      }
       const data: BoardData = {
         elements,
         appState: {
+          paper: latest.current?.appState.paper ?? DEFAULT_PAPER,
           viewBackgroundColor: appState.viewBackgroundColor,
           gridModeEnabled: appState.gridModeEnabled,
+          objectsSnapModeEnabled: appState.objectsSnapModeEnabled,
           scrollX: appState.scrollX,
           scrollY: appState.scrollY,
           zoom: { value: appState.zoom.value },
@@ -158,6 +197,9 @@ export function Editor({ id, theme }: { id: string; theme: "light" | "dark" }) {
         </div>
         <SaveIndicator state={saveState} />
         <div className="grow" />
+        <Button variant="ghost" size="sm" icon={<Grid3x3 size={17} />} aria-label="Foglio" title="Tipo di foglio: bianco, righe, quadretti, puntini" onClick={paperMenu.open}>
+          {PAPER_LABEL[paper.type]}
+        </Button>
         <Button
           variant="ghost"
           size="sm"
@@ -173,7 +215,13 @@ export function Editor({ id, theme }: { id: string; theme: "light" | "dark" }) {
         <Button variant="ghost" size="sm" icon={<MoreHorizontal size={18} />} aria-label="Altre opzioni" onClick={menu.open} />
       </header>
 
-      <div className="editor-canvas">
+      <div className={`editor-canvas ${paper.type !== "blank" ? "has-paper" : ""}`}>
+        <div
+          ref={paperRef}
+          className={`paper paper-${paper.type}`}
+          style={{ "--step": `${paper.type === "blank" ? 24 : PAPER_STEP[paper.type][paper.size]}px` } as React.CSSProperties}
+          aria-hidden="true"
+        />
         {initial === undefined ? (
           <div className="editor-loading">
             <Loader2 className="spin" size={22} />
@@ -183,7 +231,13 @@ export function Editor({ id, theme }: { id: string; theme: "light" | "dark" }) {
             excalidrawAPI={setApi}
             initialData={{
               elements: initial.elements,
-              appState: { ...initial.appState, theme, name: boardTitle(meta.title) } as Partial<AppState>,
+              appState: {
+                ...initial.appState,
+                // Aggancio a vertici e metà lato delle figure (Alt per disattivarlo al volo)
+                objectsSnapModeEnabled: initial.appState.objectsSnapModeEnabled ?? true,
+                theme,
+                name: boardTitle(meta.title),
+              } as Partial<AppState>,
               files: initial.files,
               scrollToContent: initial.appState.scrollX === undefined,
             }}
@@ -192,6 +246,7 @@ export function Editor({ id, theme }: { id: string; theme: "light" | "dark" }) {
             langCode="it-IT"
             name={boardTitle(meta.title)}
             autoFocus
+            renderTopRightUI={() => <ColorFavorites api={api} current={colors} />}
             UIOptions={{
               canvasActions: {
                 toggleTheme: false,
@@ -237,6 +292,21 @@ export function Editor({ id, theme }: { id: string; theme: "light" | "dark" }) {
           </Excalidraw>
         )}
       </div>
+
+      <Menu
+        anchor={paperMenu.anchor}
+        onClose={paperMenu.close}
+        items={[
+          ...(Object.keys(PAPER_LABEL) as PaperType[]).map((t) => ({ label: PAPER_LABEL[t], checked: paper.type === t, onSelect: () => changePaper({ type: t }) })),
+          { separator: true, label: "" },
+          ...(Object.keys(SIZE_LABEL) as PaperSize[]).map((sz) => ({
+            label: SIZE_LABEL[sz],
+            checked: paper.size === sz,
+            disabled: paper.type === "blank",
+            onSelect: () => changePaper({ size: sz }),
+          })),
+        ]}
+      />
 
       <Menu
         anchor={menu.anchor}

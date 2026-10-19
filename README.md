@@ -6,7 +6,10 @@ Lavagne infinite per appunti, schemi e idee. Un'app web leggera costruita sopra 
 - **Raccolte** per raggruppare le lavagne per progetto o tema, **preferite**, **cestino** con ripristino (svuotamento automatico dopo 30 giorni)
 - **Salvataggio automatico** in locale (IndexedDB): niente account, niente server
 - **Link condivisibili** senza backend: la lavagna viene compressa e cifrata nel browser e messa nel link stesso. Chi lo apre la vede in sola lettura e può salvarne una copia. Opzionale: **protezione con password**
-- **Tema chiaro / scuro / di sistema**, interfaccia in italiano
+- **Fogli** bianchi, a righe, a quadretti (tre misure) o puntinati, che seguono zoom e scorrimento
+- **Colori preferiti**: scegli qualsiasi colore (selettore o esadecimale), salvalo e applicalo a tratto o sfondo con un clic
+- **Aggancio a vertici e metà lato** delle figure quando disegni linee e frecce (attivo di default, Alt per disattivarlo al volo)
+- **Tema chiaro** di default, scuro o di sistema a scelta; interfaccia in italiano
 - **Import/export** di file `.excalidraw`, esportazione PNG/SVG dal menu dell'editor
 - **PWA installabile** su Mac (Chrome: "Installa app"; Safari: "Aggiungi al Dock") e **estensione Chrome** (Manifest V3)
 
@@ -48,6 +51,10 @@ Apri l'URL pubblicato (o `npm run preview` in locale) in Chrome e usa *Installa 
 Il link ha la forma `https://…/#/s/1.k.<chiave>.<dati>`. La parte dopo `#` non viene mai inviata al server: contiene la lavagna serializzata, compressa (deflate) e cifrata (AES-GCM 128). Con la password, la chiave viene derivata con PBKDF2 (250 000 iterazioni) e nel link c'è solo il salt.
 
 Limiti: il link è una "fotografia" della lavagna (le modifiche successive non si propagano) e la sua lunghezza cresce con il contenuto. Una lavagna di appunti tipica produce link di pochi KB; sopra i 60 KB l'app avvisa, perché alcune app di messaggistica troncano gli URL lunghi (via email o come file non c'è problema).
+
+## Note
+
+Il foglio (righe, quadretti, puntini) è disegnato sotto la tela e fuso con essa: compare nell'editor e nei link condivisi, non nelle immagini esportate.
 
 ## Struttura
 

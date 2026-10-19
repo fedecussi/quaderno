@@ -19,12 +19,29 @@ export interface BoardMeta {
   background?: string;
 }
 
+/** Tipo di foglio disegnato sotto la lavagna. */
+export type PaperType = "blank" | "lines" | "squares" | "dots";
+export type PaperSize = "s" | "m" | "l";
+export interface Paper {
+  type: PaperType;
+  size: PaperSize;
+}
+export const DEFAULT_PAPER: Paper = { type: "blank", size: "m" };
+/** Passo del pattern in pixel a zoom 100%. */
+export const PAPER_STEP: Record<Exclude<PaperType, "blank">, Record<PaperSize, number>> = {
+  lines: { s: 24, m: 32, l: 44 },
+  squares: { s: 16, m: 24, l: 40 },
+  dots: { s: 16, m: 24, l: 40 },
+};
+
 /** Contenuto della lavagna (caricato solo quando serve). */
 export interface BoardData {
   elements: readonly ExcalidrawElement[];
   appState: Partial<{
     viewBackgroundColor: string;
     gridModeEnabled: boolean;
+    objectsSnapModeEnabled: boolean;
+    paper: Paper;
     scrollX: number;
     scrollY: number;
     zoom: { value: number };
@@ -49,11 +66,14 @@ export interface Settings {
   sort: SortMode;
   /** URL pubblico dell'app, usato come base per i link condivisi (utile nell'estensione). */
   publicUrl: string;
+  /** Colori preferiti (hex o "transparent"), condivisi tra tratto e sfondo. */
+  favoriteColors: string[];
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-  theme: "system",
+  theme: "light",
   view: "grid",
   sort: "updated",
   publicUrl: "",
+  favoriteColors: [],
 };

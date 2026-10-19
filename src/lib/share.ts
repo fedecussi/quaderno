@@ -97,7 +97,7 @@ function serialize(payload: SharePayload, includeFiles: boolean): Uint8Array {
     t: payload.title,
     s: payload.sharedAt,
     e: elements,
-    a: { viewBackgroundColor: data.appState.viewBackgroundColor, gridModeEnabled: data.appState.gridModeEnabled },
+    a: { viewBackgroundColor: data.appState.viewBackgroundColor, gridModeEnabled: data.appState.gridModeEnabled, paper: data.appState.paper },
     f: files,
   });
   return new TextEncoder().encode(json);
