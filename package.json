@@ -14,9 +14,9 @@
     "icons": "node scripts/make-icons.mjs",
     "build:desktop": "node scripts/build-desktop.mjs",
     "desktop": "npm run build:desktop && electron .",
-    "dist:mac": "npm run build:desktop && electron-builder --mac",
-    "dist:win": "npm run build:desktop && electron-builder --win",
-    "dist:linux": "npm run build:desktop && electron-builder --linux"
+    "dist:mac": "npm run build:desktop && electron-builder --mac --publish never",
+    "dist:win": "npm run build:desktop && electron-builder --win --publish never",
+    "dist:linux": "npm run build:desktop && electron-builder --linux --publish never"
   },
   "devDependencies": {
     "@excalidraw/excalidraw": "^0.18.1",
