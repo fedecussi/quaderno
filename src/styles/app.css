@@ -1566,7 +1566,7 @@ kbd {
    App desktop macOS (Electron, barra del titolo nascosta)
    =========================================================== */
 .mac-desktop .sidebar-top {
-  padding-left: 66px;
+  padding-left: 88px;
   padding-top: 6px;
   -webkit-app-region: drag;
 }
@@ -1574,7 +1574,7 @@ kbd {
   -webkit-app-region: no-drag;
 }
 .mac-desktop .editor-bar {
-  padding-left: 82px;
+  padding-left: 96px;
   -webkit-app-region: drag;
 }
 .mac-desktop .editor-bar button,
@@ -1597,6 +1597,29 @@ kbd {
 }
 @media (max-width: 760px) {
   .mac-desktop .sidebar-top {
-    padding-left: 66px;
+    padding-left: 88px;
   }
+}
+
+/* Stato sincronizzazione */
+.sync-idle {
+  color: var(--success) !important;
+}
+.sync-error {
+  color: var(--danger) !important;
+}
+.sync-syncing {
+  color: var(--accent) !important;
+}
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+code {
+  font-family: var(--mono);
+  font-size: 12px;
+  background: var(--bg-sunken);
+  padding: 1px 5px;
+  border-radius: 4px;
 }

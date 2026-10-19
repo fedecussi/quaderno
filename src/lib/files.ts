@@ -1,4 +1,3 @@
-import { serializeAsJSON, loadFromBlob } from "@excalidraw/excalidraw";
 import type { BoardData, BoardMeta } from "./types";
 import { boardTitle, slugify } from "./format";
 import { createBoard } from "./store";
@@ -13,13 +12,15 @@ export function downloadBlob(blob: Blob, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
-export function downloadExcalidrawFile(meta: BoardMeta, data: BoardData) {
+export async function downloadExcalidrawFile(meta: BoardMeta, data: BoardData) {
+  const { serializeAsJSON } = await import("@excalidraw/excalidraw");
   const json = serializeAsJSON(data.elements, data.appState as never, data.files ?? {}, "local");
   downloadBlob(new Blob([json], { type: "application/json" }), `${slugify(boardTitle(meta.title))}.excalidraw`);
 }
 
 /** Importa file .excalidraw come nuove lavagne. Ritorna quante ne ha create. */
 export async function importExcalidrawFiles(files: File[], collectionId: string | null): Promise<number> {
+  const { loadFromBlob } = await import("@excalidraw/excalidraw");
   let n = 0;
   for (const f of files) {
     try {

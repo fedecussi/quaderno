@@ -20,7 +20,7 @@ mac:
   darkModeSupport: true
   hardenedRuntime: false
   gatekeeperAssess: false
-  identity: null
+  identity: "-"
 dmg:
   title: Quaderno
   iconSize: 96

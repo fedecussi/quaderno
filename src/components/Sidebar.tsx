@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { LayoutGrid, Star, Trash2, Plus, FolderOpen, MoreHorizontal, Pencil, Settings, Sun, Moon, Monitor, Upload } from "lucide-react";
+import { LayoutGrid, Star, Trash2, Plus, FolderOpen, MoreHorizontal, Pencil, Settings, Sun, Moon, Monitor, Upload, Cloud, CloudOff, RefreshCw, CloudAlert } from "lucide-react";
+import { relativeTime } from "../lib/format";
+import { syncNow } from "../lib/sync";
 import { Logo } from "./Logo";
 import { Button, Menu, Prompt, Confirm, useMenu } from "./ui";
 import { useStore, addCollection, updateCollection, deleteCollection, setSettings } from "../lib/store";
@@ -20,7 +22,7 @@ export function Sidebar({
   onOpenSettings: () => void;
   counts: { all: number; favorites: number; trash: number; byCollection: Record<string, number> };
 }) {
-  const { collections, settings } = useStore();
+  const { collections, settings, sync } = useStore();
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<Collection | null>(null);
   const [deleting, setDeleting] = useState<Collection | null>(null);
@@ -98,6 +100,23 @@ export function Sidebar({
           Importa
         </Button>
         <div className="grow" />
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`sync-btn sync-${sync.status}`}
+          icon={sync.status === "off" ? <CloudOff size={16} /> : sync.status === "syncing" ? <RefreshCw size={16} className="spin" /> : sync.status === "error" ? <CloudAlert size={16} /> : <Cloud size={16} />}
+          aria-label="Sincronizzazione"
+          title={
+            sync.status === "off"
+              ? "Sincronizzazione non attiva: configurala nelle Impostazioni"
+              : sync.status === "syncing"
+                ? "Sincronizzazione in corso…"
+                : sync.status === "error"
+                  ? `Errore: ${sync.error}`
+                  : `Sincronizzato${sync.lastSyncAt ? " " + relativeTime(sync.lastSyncAt) : ""}${sync.pending ? ` · ${sync.pending} da inviare` : ""}. Clic per sincronizzare ora`
+          }
+          onClick={() => (sync.status === "off" ? onOpenSettings() : syncNow(true).catch(() => {}))}
+        />
         <Button variant="ghost" size="sm" icon={themeIcon} aria-label="Tema" title="Tema" onClick={themeMenu.open} />
         <Button variant="ghost" size="sm" icon={<Settings size={16} />} aria-label="Impostazioni" title="Impostazioni" onClick={onOpenSettings} />
       </div>

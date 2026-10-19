@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Excalidraw, MainMenu, WelcomeScreen, getSceneVersion } from "@excalidraw/excalidraw";
+import "@excalidraw/excalidraw/index.css";
+import { Excalidraw, MainMenu, WelcomeScreen, getSceneVersion, CaptureUpdateAction } from "@excalidraw/excalidraw";
 import type { ExcalidrawImperativeAPI, AppState, BinaryFiles } from "@excalidraw/excalidraw/types";
 import type { OrderedExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import { ArrowLeft, Share2, MoreHorizontal, Star, Copy, Download, Trash2, FolderInput, Check, Loader2, Grid3x3, FileDown } from "lucide-react";
@@ -170,6 +171,24 @@ export function Editor({ id, theme }: { id: string; theme: "light" | "dark" }) {
       document.removeEventListener("keydown", onKey);
     };
   }, [paperOpen]);
+
+  // La lavagna aperta è stata aggiornata dal cloud: ricarica la scena (solo se qui non ci sono modifiche in sospeso)
+  useEffect(() => {
+    if (!api) return;
+    const onRemote = async (e: Event) => {
+      if ((e as CustomEvent<{ id: string }>).detail.id !== id) return;
+      if (saveTimer.current !== undefined && latest.current && getSceneVersion(latest.current.elements) !== lastSavedVersion.current) return;
+      const data = await loadBoardData(id);
+      if (!data) return;
+      latest.current = data;
+      lastSavedVersion.current = getSceneVersion(data.elements);
+      api.addFiles(Object.values(data.files ?? {}));
+      api.updateScene({ elements: data.elements, captureUpdate: CaptureUpdateAction.NEVER });
+      toast("Lavagna aggiornata da un altro dispositivo");
+    };
+    window.addEventListener("quaderno:remote-board", onRemote);
+    return () => window.removeEventListener("quaderno:remote-board", onRemote);
+  }, [api, id]);
 
   // Magnete per i punti di linee e frecce (vertici, metà lato, centro delle figure)
   useEffect(() => {

@@ -1,4 +1,3 @@
-import { exportToCanvas } from "@excalidraw/excalidraw";
 import type { BoardData } from "./types";
 
 const W = 480;
@@ -9,6 +8,7 @@ export async function makeThumbnail(data: BoardData, theme: "light" | "dark"): P
   const elements = data.elements.filter((e) => !e.isDeleted);
   if (!elements.length) return undefined;
   try {
+    const { exportToCanvas } = await import("@excalidraw/excalidraw");
     const canvas = await exportToCanvas({
       elements,
       files: data.files ?? {},

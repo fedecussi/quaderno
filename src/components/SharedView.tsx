@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import "@excalidraw/excalidraw/index.css";
 import { Excalidraw, MainMenu } from "@excalidraw/excalidraw";
 import type { AppState } from "@excalidraw/excalidraw/types";
 import { Lock, Download, BookmarkPlus, Loader2, AlertTriangle, FileDown } from "lucide-react";

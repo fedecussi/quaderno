@@ -5,6 +5,7 @@ Lavagne infinite per appunti, schemi e idee. Un'app web leggera costruita sopra 
 - **Più lavagne** con titolo, miniatura automatica, ricerca, ordinamento, vista griglia/elenco
 - **Raccolte** per raggruppare le lavagne per progetto o tema, **preferite**, **cestino** con ripristino (svuotamento automatico dopo 30 giorni)
 - **Salvataggio automatico** in locale (IndexedDB): niente account, niente server
+- **Sincronizzazione tra dispositivi** opzionale tramite un gist privato del tuo account GitHub: web, estensione e app desktop condividono le stesse lavagne (Impostazioni → Sincronizzazione)
 - **Link condivisibili** senza backend: la lavagna viene compressa e cifrata nel browser e messa nel link stesso. Chi lo apre la vede in sola lettura e può salvarne una copia. Opzionale: **protezione con password**
 - **Fogli** bianchi, a righe, a quadretti (tre misure) o puntinati, con intensità regolabile, che seguono zoom e scorrimento
 - **Colori preferiti** dentro le sezioni Tratto e Sfondo del pannello: scegli qualsiasi colore con il selettore di sistema (“+”), salvalo con “salva” e applicalo con un clic
@@ -54,6 +55,12 @@ L'app nativa è un contenitore Electron della stessa build web, con menu macOS, 
 Le lavagne dell'app desktop stanno nel suo profilo (`~/Library/Application Support/Quaderno`), separate da quelle del browser.
 
 In alternativa, senza installare nulla: apri l'URL pubblicato in Chrome e usa *Installa Quaderno* dalla barra degli indirizzi (PWA), che funziona anche offline.
+
+## Sincronizzazione tra dispositivi
+
+Non c'è un server di Quaderno: le lavagne vengono salvate in un gist *privato* del tuo account GitHub (`quaderno-index.json` con i metadati, un file per lavagna). Serve un [token personale](https://github.com/settings/tokens/new?scopes=gist&description=Quaderno%20sync) con il solo permesso `gist`, da incollare in *Impostazioni → Sincronizzazione* su ogni dispositivo. Il token resta sul dispositivo.
+
+Si sincronizza all'avvio, quando la finestra torna in primo piano, ogni 5 minuti e pochi secondi dopo ogni modifica. Vince la modifica più recente; se una lavagna è stata modificata su due dispositivi senza sincronizzare, la versione locale viene conservata come "(copia locale)". Le eliminazioni definitive si propagano.
 
 ## Come funzionano i link condivisi
 

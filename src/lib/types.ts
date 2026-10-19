@@ -74,6 +74,18 @@ export interface Settings {
   /** Punti di linee e frecce agganciati dal magnete: restano fissi sul vertice. */
   anchorStart: boolean;
   anchorEnd: boolean;
+  /** Sincronizzazione tramite Gist privato su GitHub. */
+  syncToken: string;
+  syncGistId: string;
+  syncLogin: string;
+  /** Versione (commit) del gist vista l'ultima volta: se non cambia, niente da scaricare. */
+  syncLastVersion: string;
+}
+
+/** Lavagna eliminata definitivamente: serve a propagare la cancellazione agli altri dispositivi. */
+export interface Tombstone {
+  id: string;
+  at: number;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -85,4 +97,8 @@ export const DEFAULT_SETTINGS: Settings = {
   favoriteBackgroundColors: [],
   anchorStart: true,
   anchorEnd: true,
+  syncToken: "",
+  syncGistId: "",
+  syncLogin: "",
+  syncLastVersion: "",
 };

@@ -1,13 +1,16 @@
-import { useEffect } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { useRoute } from "./lib/router";
 import { init, useStore, createBoard } from "./lib/store";
 import { navigate } from "./lib/router";
+import { start as startSync } from "./lib/sync";
 import { useTheme } from "./lib/useTheme";
 import { Dashboard } from "./components/Dashboard";
-import { Editor } from "./components/Editor";
-import { SharedView } from "./components/SharedView";
 import { Toaster } from "./components/ui";
 import { LogoMark } from "./components/Logo";
+
+// L'editor (con Excalidraw) viene caricato solo quando serve: la dashboard parte subito
+const Editor = lazy(() => import("./components/Editor").then((m) => ({ default: m.Editor })));
+const SharedView = lazy(() => import("./components/SharedView").then((m) => ({ default: m.SharedView })));
 
 export default function App() {
   const route = useRoute();
@@ -15,7 +18,7 @@ export default function App() {
   const theme = useTheme();
 
   useEffect(() => {
-    init();
+    init().then(startSync);
   }, []);
 
   // #/new (menu File dell'app desktop): crea una lavagna e aprila
@@ -38,8 +41,10 @@ export default function App() {
   return (
     <>
       {route.name === "home" && <Dashboard filter={route.filter} />}
-      {route.name === "board" && <Editor key={route.id} id={route.id} theme={theme} />}
-      {route.name === "shared" && <SharedView key={route.payload} payload={route.payload} theme={theme} />}
+      <Suspense fallback={<div className="splash"><LogoMark size={44} /></div>}>
+        {route.name === "board" && <Editor key={route.id} id={route.id} theme={theme} />}
+        {route.name === "shared" && <SharedView key={route.payload} payload={route.payload} theme={theme} />}
+      </Suspense>
       <Toaster />
     </>
   );

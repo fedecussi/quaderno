@@ -49,7 +49,9 @@ function createWindow(route = "#/") {
     webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: true },
   });
   if (st.maximized) win.maximize();
-  win.once("ready-to-show", () => win.show());
+  const showNow = () => !win.isDestroyed() && !win.isVisible() && win.show();
+  win.once("ready-to-show", showNow);
+  setTimeout(showNow, 300);
   win.loadURL(`app://quaderno/index.html${route}`);
 
   // Link esterni (anteprima link condivisi, link negli elementi) → browser di sistema
