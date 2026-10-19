@@ -21,10 +21,11 @@ export default defineConfig({
   define: { __APP_VERSION__: JSON.stringify(version), __BUILD_DATE__: JSON.stringify(new Date().toISOString().slice(0, 10)) },
   plugins: [
     react(),
-    // Il service worker serve solo alla versione web (PWA installabile su Mac).
-    !isExtension &&
-      !isDesktop &&
-      VitePWA({
+    // Il service worker serve solo alla versione web (PWA installabile su Mac);
+    // nelle altre build il plugin resta attivo ma disabilitato, così il modulo
+    // virtuale di registrazione esiste comunque (vuoto).
+    VitePWA({
+        disable: isExtension || isDesktop,
         registerType: "prompt",
         includeAssets: ["favicon.svg", "icons/*.png"],
         manifest: {
@@ -55,7 +56,7 @@ export default defineConfig({
           ],
         },
       }),
-  ].filter(Boolean),
+  ],
   build: {
     outDir: isExtension ? "dist-extension" : isDesktop ? "dist-desktop" : "dist",
     emptyOutDir: true,
