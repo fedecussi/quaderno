@@ -98,6 +98,8 @@ export function isConnected(): boolean {
 /** Verifica il token, trova (o crea) il gist di Quaderno e avvia la sincronizzazione. */
 export async function connect(token: string): Promise<{ login: string; gistId: string; created: boolean }> {
   token = token.trim();
+  if (/^https?:\/\//i.test(token) || token.includes("github.com")) throw new SyncError("Hai incollato un link: serve il token personale (inizia con ghp_ o github_pat_)");
+  if (!/^(ghp_|github_pat_|gho_)/.test(token)) throw new SyncError("Il token non sembra valido: deve iniziare con ghp_ o github_pat_");
   const user = await gh<{ login: string }>("/user", {}, token);
   let gistId = "";
   let created = false;

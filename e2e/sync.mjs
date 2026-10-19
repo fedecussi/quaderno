@@ -18,7 +18,7 @@ async function device(name) {
 }
 async function connect(page) {
   await page.click('[aria-label="Impostazioni"]');
-  await page.fill('input[placeholder="ghp_…"]', "tok_fede_0123456789abcdef");
+  await page.fill('input[placeholder="ghp_…"]', "ghp_fede0123456789abcdef");
   await page.click("button:has-text('Collega')");
   await page.waitForSelector("text=Collegato come", { timeout: 15000 });
   await page.keyboard.press("Escape");

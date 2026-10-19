@@ -30,8 +30,8 @@ http
         res.writeHead(200, { "content-type": "text/plain", "access-control-allow-origin": "*" });
         return res.end(g.files[name]);
       }
-      if (!auth.startsWith("Bearer tok_")) return json(res, 401, { message: "bad credentials" });
-      const login = auth.slice("Bearer tok_".length);
+      if (!auth.startsWith("Bearer ghp_")) return json(res, 401, { message: "bad credentials" });
+      const login = auth.slice("Bearer ghp_".length);
       if (url.pathname === "/user") return json(res, 200, { login });
       if (url.pathname === "/gists" && req.method === "GET") return json(res, 200, [...gists.values()].filter((g) => g.owner === login).map(view));
       if (url.pathname === "/gists" && req.method === "POST") {

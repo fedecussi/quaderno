@@ -178,7 +178,7 @@ export function Toaster() {
   useEffect(() => {
     const l = (t: ToastMsg) => {
       setList((xs) => [...xs, t]);
-      setTimeout(() => setList((xs) => xs.filter((x) => x.id !== t.id)), t.action ? 6000 : 3200);
+      setTimeout(() => setList((xs) => xs.filter((x) => x.id !== t.id)), t.action ? 15000 : 3200);
     };
     toastListeners.add(l);
     return () => void toastListeners.delete(l);

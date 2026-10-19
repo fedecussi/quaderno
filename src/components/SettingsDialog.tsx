@@ -106,17 +106,17 @@ export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () =
         )}
       </section>
 
-      <section className="settings-section">
-        <h3>
-          <Globe size={16} /> URL pubblico dell'app
-        </h3>
+      <details className="settings-section settings-advanced" open={isExtensionContext()}>
+        <summary>
+          <Globe size={16} /> Avanzate: URL pubblico dell'app
+        </summary>
         <p className="muted small">
-          È la base dei link condivisi. {isExtensionContext() ? "Nell'estensione è obbligatorio: " : "Di solito non serve toccarlo: "}
-          inserisci l'indirizzo dove hai pubblicato Quaderno (es. GitHub Pages).
+          Non c'entra con la sincronizzazione: è solo la base dei link condivisi. {isExtensionContext() ? "Nell'estensione va impostato: " : "Sul web e nell'app desktop è già corretto. "}
+          Se serve, inserisci l'indirizzo dove è pubblicato Quaderno.
         </p>
         <input className="input mono" placeholder="https://tuonome.github.io/quaderno/" value={url} onChange={(e) => setUrl(e.target.value)} />
         {effective && <p className="muted small">I link avranno la forma: {effective}#/s/…</p>}
-      </section>
+      </details>
 
       <section className="settings-section">
         <h3>
@@ -141,6 +141,10 @@ export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () =
           Le lavagne vivono nel database del browser di questo dispositivo (IndexedDB). {usage && <>Lavagne salvate: {usage.boards}{usage.bytes != null && <> · spazio usato: {formatBytes(usage.bytes)}</>}.</>}
           <br />
           Per un backup esporta le lavagne come file .excalidraw.
+        </p>
+        <p className="muted small">
+          Quaderno versione <code>{__APP_VERSION__}</code> del {__BUILD_DATE__}
+          {typeof navigator !== "undefined" && navigator.userAgent.includes("Electron") ? " · app desktop" : isExtensionContext() ? " · estensione" : " · web"}
         </p>
       </section>
     </Modal>
