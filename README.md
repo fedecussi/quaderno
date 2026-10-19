@@ -6,7 +6,7 @@ Lavagne infinite per appunti, schemi e idee. Un'app web leggera costruita sopra 
 - **Raccolte** per raggruppare le lavagne per progetto o tema, **preferite**, **cestino** con ripristino (svuotamento automatico dopo 30 giorni)
 - **Salvataggio automatico** in locale (IndexedDB): niente account, niente server
 - **Link condivisibili** senza backend: la lavagna viene compressa e cifrata nel browser e messa nel link stesso. Chi lo apre la vede in sola lettura e può salvarne una copia. Opzionale: **protezione con password**
-- **Fogli** bianchi, a righe, a quadretti (tre misure) o puntinati, che seguono zoom e scorrimento
+- **Fogli** bianchi, a righe, a quadretti (tre misure) o puntinati, con intensità regolabile, che seguono zoom e scorrimento
 - **Colori preferiti** dentro le sezioni Tratto e Sfondo del pannello: scegli qualsiasi colore con il selettore di sistema (“+”), salvalo con “salva” e applicalo con un clic
 - **Magnete per linee e frecce**: i punti scattano su vertici, metà lato e centro delle figure vicine; un punto agganciato a un vertice o a una metà lato resta lì anche quando la figura viene spostata, ridimensionata o ruotata (Ctrl/Cmd disattiva il magnete al volo)
 - **Esportazione PDF** a 1×, 2×, 3× o 4× (96–384 dpi), pagina su misura, A4 o A3, con o senza sfondo e foglio

@@ -25,8 +25,10 @@ export type PaperSize = "s" | "m" | "l";
 export interface Paper {
   type: PaperType;
   size: PaperSize;
+  /** Intensità della trama, 0.1–1 (default 1). */
+  opacity?: number;
 }
-export const DEFAULT_PAPER: Paper = { type: "blank", size: "m" };
+export const DEFAULT_PAPER: Paper = { type: "blank", size: "m", opacity: 1 };
 /** Passo del pattern in pixel a zoom 100%. */
 export const PAPER_STEP: Record<Exclude<PaperType, "blank">, Record<PaperSize, number>> = {
   lines: { s: 24, m: 32, l: 44 },

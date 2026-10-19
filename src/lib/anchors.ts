@@ -99,6 +99,13 @@ export function syncAnchors(api: ExcalidrawImperativeAPI): boolean {
       const pt = endpoint(a, end);
       const binding = end === "start" ? a.startBinding : a.endBinding;
 
+      // 0) Se l'ancora esiste già ma Excalidraw ha ricreato il binding (succede alla
+      //    chiusura della freccia), lo togliamo di nuovo: altrimenti i due si contendono il punto
+      if (binding?.elementId && anchors[end]) {
+        geom = { ...geom, [end === "start" ? "startBinding" : "endBinding"]: null };
+        shapeUnbind(binding.elementId, a.id);
+      }
+
       // 1) Binding nativo con il punto su un vertice/metà lato → diventa ancora fissa
       if (binding?.elementId && !anchors[end]) {
         const shape = byId.get(binding.elementId);

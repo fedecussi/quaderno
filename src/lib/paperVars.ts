@@ -16,6 +16,7 @@ export function applyPaperVars(el: HTMLElement | null, paper: Paper, scrollX: nu
   el.style.setProperty("--dot", `${dot}px`);
   el.style.setProperty("--px", `${scrollX * zoom}px`);
   el.style.setProperty("--py", `${scrollY * zoom}px`);
-  // Linee più tenui quando il foglio è molto rimpicciolito
-  el.style.setProperty("--fade", String(Math.min(1, Math.max(0.45, zoom))));
+  // Trama più tenue quando il foglio è molto rimpicciolito, moltiplicata per l'intensità scelta
+  const fade = Math.min(1, Math.max(0.45, zoom));
+  el.style.setProperty("--alpha", String(fade * (paper.opacity ?? 1)));
 }

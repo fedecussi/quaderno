@@ -39,7 +39,8 @@ export function Editor({ id, theme }: { id: string; theme: "light" | "dark" }) {
   const [pdfOpen, setPdfOpen] = useState(false);
   const canvasHost = useRef<HTMLDivElement>(null);
   const menu = useMenu();
-  const paperMenu = useMenu();
+  const [paperOpen, setPaperOpen] = useState(false);
+  const paperPopRef = useRef<HTMLDivElement>(null);
   const [paper, setPaper] = useState<Paper>(DEFAULT_PAPER);
   const paperRef = useRef<HTMLDivElement>(null);
 
@@ -153,6 +154,21 @@ export function Editor({ id, theme }: { id: string; theme: "light" | "dark" }) {
     };
   }, [persist]);
 
+  // Chiusura del popover Foglio
+  useEffect(() => {
+    if (!paperOpen) return;
+    const onDown = (e: PointerEvent) => {
+      if (!paperPopRef.current?.contains(e.target as Node)) setPaperOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setPaperOpen(false);
+    document.addEventListener("pointerdown", onDown, true);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown, true);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [paperOpen]);
+
   // Magnete per i punti di linee e frecce (vertici, metà lato, centro delle figure)
   useEffect(() => {
     if (!api || !canvasHost.current) return;
@@ -209,9 +225,36 @@ export function Editor({ id, theme }: { id: string; theme: "light" | "dark" }) {
         </div>
         <SaveIndicator state={saveState} />
         <div className="grow" />
-        <Button variant="ghost" size="sm" icon={<Grid3x3 size={17} />} aria-label="Foglio" title="Tipo di foglio: bianco, righe, quadretti, puntini" onClick={paperMenu.open}>
-          {PAPER_LABEL[paper.type]}
-        </Button>
+        <div className="popover-anchor" ref={paperPopRef}>
+          <Button variant="ghost" size="sm" icon={<Grid3x3 size={17} />} aria-label="Foglio" title="Foglio: bianco, righe, quadretti, puntini e intensità" aria-expanded={paperOpen} onClick={() => setPaperOpen((o) => !o)}>
+            {PAPER_LABEL[paper.type]}
+          </Button>
+          {paperOpen && (
+            <div className="paper-pop" role="dialog" aria-label="Foglio">
+              <label className="row">Foglio</label>
+              <div className="seg">
+                {(Object.keys(PAPER_LABEL) as PaperType[]).map((t) => (
+                  <button key={t} className={paper.type === t ? "on" : ""} onClick={() => changePaper({ type: t })}>
+                    {PAPER_LABEL[t]}
+                  </button>
+                ))}
+              </div>
+              <label className="row">Dimensione</label>
+              <div className="seg">
+                {(Object.keys(SIZE_LABEL) as PaperSize[]).map((sz) => (
+                  <button key={sz} className={paper.size === sz ? "on" : ""} disabled={paper.type === "blank"} onClick={() => changePaper({ size: sz })}>
+                    {SIZE_LABEL[sz]}
+                  </button>
+                ))}
+              </div>
+              <label className="row" htmlFor="paper-opacity">
+                <span>Intensità</span>
+                <span>{Math.round((paper.opacity ?? 1) * 100)}%</span>
+              </label>
+              <input id="paper-opacity" type="range" min={10} max={100} step={5} disabled={paper.type === "blank"} value={Math.round((paper.opacity ?? 1) * 100)} onChange={(e) => changePaper({ opacity: Number(e.target.value) / 100 })} />
+            </div>
+          )}
+        </div>
         <Button
           variant="ghost"
           size="sm"
@@ -305,21 +348,6 @@ export function Editor({ id, theme }: { id: string; theme: "light" | "dark" }) {
           </Excalidraw>
         )}
       </div>
-
-      <Menu
-        anchor={paperMenu.anchor}
-        onClose={paperMenu.close}
-        items={[
-          ...(Object.keys(PAPER_LABEL) as PaperType[]).map((t) => ({ label: PAPER_LABEL[t], checked: paper.type === t, onSelect: () => changePaper({ type: t }) })),
-          { separator: true, label: "" },
-          ...(Object.keys(SIZE_LABEL) as PaperSize[]).map((sz) => ({
-            label: SIZE_LABEL[sz],
-            checked: paper.size === sz,
-            disabled: paper.type === "blank",
-            onSelect: () => changePaper({ size: sz }),
-          })),
-        ]}
-      />
 
       <Menu
         anchor={menu.anchor}

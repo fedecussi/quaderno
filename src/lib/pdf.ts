@@ -72,6 +72,7 @@ export async function exportPdf(data: BoardData, title: string, opts: PdfOptions
     const oy = ((((PADDING - minY) * scale) % step) + step) % step;
     ctx.strokeStyle = ctx.fillStyle = opts.dark ? (paper.type === "dots" ? "#45464f" : "#34353d") : paper.type === "dots" ? "#aeb4c0" : "#c4c9d4";
     ctx.lineWidth = Math.max(1, scale * 0.9);
+    ctx.globalAlpha = paper.opacity ?? 1;
     if (paper.type === "dots") {
       const r = 1.3 * scale;
       for (let x = ox; x < out.width; x += step)
@@ -93,6 +94,7 @@ export async function exportPdf(data: BoardData, title: string, opts: PdfOptions
         }
       ctx.stroke();
     }
+    ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = opts.dark ? "screen" : "multiply";
     ctx.drawImage(scene, 0, 0);
     canvas = out;

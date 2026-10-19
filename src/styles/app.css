@@ -1295,56 +1295,96 @@ kbd {
   --dot: 1.3px;
   --px: 0px;
   --py: 0px;
-  --fade: 1;
-  --ink: #c4c9d4;
+  --alpha: 1;
+  --ink: #b9bfcb;
   background-color: #fff;
   display: none;
 }
 .has-paper .paper {
   display: block;
 }
+/* La trama sta su uno pseudo-elemento, così l'intensità si regola con l'opacità */
+.paper::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: var(--alpha);
+}
 /* La tela di Excalidraw (bianca dove vuota) si fonde con il foglio in "multiply" */
 .has-paper .excalidraw__canvas.static {
   mix-blend-mode: multiply;
 }
-.paper-lines {
+.paper-lines::before {
   background-image: linear-gradient(to bottom, var(--ink) 1px, transparent 1px);
   background-size: 100% var(--size);
   background-position: 0 var(--py);
 }
-.paper-squares {
+.paper-squares::before {
   background-image: linear-gradient(to right, var(--ink) 1px, transparent 1px), linear-gradient(to bottom, var(--ink) 1px, transparent 1px);
   background-size: var(--size) var(--size);
   background-position: var(--px) var(--py);
 }
-.paper-dots {
-  --ink: #aeb4c0;
+.paper-dots::before {
   background-image: radial-gradient(circle, var(--ink) var(--dot), transparent calc(var(--dot) + 0.5px));
   background-size: var(--size) var(--size);
   background-position: calc(var(--px) - var(--size) / 2) calc(var(--py) - var(--size) / 2);
 }
-.has-paper .paper::after {
-  /* schiarisce la trama quando si è molto rimpiccioliti */
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: #fff;
-  opacity: calc(1 - var(--fade));
-  pointer-events: none;
-}
-:root[data-theme="dark"] .has-paper .paper::after {
-  background: #000;
-}
 /* In tema scuro la tela è scura: si usa "screen" con un foglio nero e linee chiare */
 :root[data-theme="dark"] .paper {
   background-color: #000;
-  --ink: #34353d;
-}
-:root[data-theme="dark"] .paper-dots {
-  --ink: #45464f;
+  --ink: #4a4b55;
 }
 :root[data-theme="dark"] .has-paper .excalidraw__canvas.static {
   mix-blend-mode: screen;
+}
+
+/* Popover "Foglio" */
+.popover-anchor {
+  position: relative;
+}
+.paper-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 288px;
+  padding: 12px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: pop 0.14s var(--ease);
+  font-weight: 400;
+}
+.paper-pop label.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.paper-pop input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+  margin: 2px 0;
+}
+.paper-pop .seg {
+  width: 100%;
+}
+.paper-pop .seg button {
+  flex: 1;
+  width: auto;
+  padding: 0 8px;
+  font-size: 12.5px;
+}
+.paper-pop .seg button:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 /* ===========================================================
