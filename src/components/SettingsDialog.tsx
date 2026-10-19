@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Database, Globe } from "lucide-react";
+import { Database, Globe, Magnet } from "lucide-react";
 import { Button, Modal } from "./ui";
 import { setSettings, useStore } from "../lib/store";
 import { estimateUsage } from "../lib/db";
@@ -51,6 +51,21 @@ export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () =
         </p>
         <input className="input mono" placeholder="https://tuonome.github.io/quaderno/" value={url} onChange={(e) => setUrl(e.target.value)} />
         {effective && <p className="muted small">I link avranno la forma: {effective}#/s/…</p>}
+      </section>
+
+      <section className="settings-section">
+        <h3>
+          <Magnet size={16} /> Frecce agganciate dal magnete
+        </h3>
+        <p className="muted small">Quando un punto viene agganciato a un vertice o a una metà lato, resta fisso lì anche se sposti la figura. Qui puoi tornare al comportamento di Excalidraw (il punto scivola lungo il bordo) per uno dei due estremi o per entrambi.</p>
+        <label className="option">
+          <input type="checkbox" checked={settings.anchorStart !== false} onChange={(e) => setSettings({ anchorStart: e.target.checked })} />
+          <span>Punto iniziale fisso</span>
+        </label>
+        <label className="option">
+          <input type="checkbox" checked={settings.anchorEnd !== false} onChange={(e) => setSettings({ anchorEnd: e.target.checked })} />
+          <span>Punto finale fisso</span>
+        </label>
       </section>
 
       <section className="settings-section">

@@ -71,6 +71,9 @@ export interface Settings {
   /** Colori preferiti per tratto e sfondo (esadecimali). */
   favoriteStrokeColors: string[];
   favoriteBackgroundColors: string[];
+  /** Punti di linee e frecce agganciati dal magnete: restano fissi sul vertice. */
+  anchorStart: boolean;
+  anchorEnd: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -80,4 +83,6 @@ export const DEFAULT_SETTINGS: Settings = {
   publicUrl: "",
   favoriteStrokeColors: [],
   favoriteBackgroundColors: [],
+  anchorStart: true,
+  anchorEnd: true,
 };

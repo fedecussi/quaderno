@@ -71,12 +71,18 @@ function withEndpoint(a: LinearLike, end: End, target: P): Record<string, unknow
   return { x, y, points, width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys) };
 }
 
-// Memoria dell'ultima posizione vista di ancora e punto, per capire chi si è mosso.
-const seen = new Map<string, { p: P; e: P }>();
+const DETACH_PX = 4;
+
+export interface AnchorPrefs {
+  start: boolean;
+  end: boolean;
+}
 
 /** Da chiamare ad ogni onChange. Ritorna true se ha aggiornato la scena. */
-export function syncAnchors(api: ExcalidrawImperativeAPI): boolean {
+export function syncAnchors(api: ExcalidrawImperativeAPI, prefs: AnchorPrefs = { start: true, end: true }): boolean {
   const elements = api.getSceneElements();
+  const st = api.getAppState();
+  const selected = st.selectedElementIds;
   const byId = new Map(elements.map((e) => [e.id, e]));
   const patches = new Map<string, Record<string, unknown>>();
   const patch = (id: string, p: Record<string, unknown>) => patches.set(id, { ...(patches.get(id) ?? {}), ...p });
@@ -95,14 +101,23 @@ export function syncAnchors(api: ExcalidrawImperativeAPI): boolean {
     let geom: Record<string, unknown> = {};
 
     for (const end of ["start", "end"] as End[]) {
-      const key = `${a.id}:${end}`;
       const pt = endpoint(a, end);
       const binding = end === "start" ? a.startBinding : a.endBinding;
+      const bindingKey = end === "start" ? "startBinding" : "endBinding";
+
+      // Estremo con ancore disattivate dalle impostazioni: comportamento nativo
+      if (!prefs[end]) {
+        if (anchors[end]) {
+          delete anchors[end];
+          anchorsChanged = true;
+        }
+        continue;
+      }
 
       // 0) Se l'ancora esiste già ma Excalidraw ha ricreato il binding (succede alla
       //    chiusura della freccia), lo togliamo di nuovo: altrimenti i due si contendono il punto
       if (binding?.elementId && anchors[end]) {
-        geom = { ...geom, [end === "start" ? "startBinding" : "endBinding"]: null };
+        geom = { ...geom, [bindingKey]: null };
         shapeUnbind(binding.elementId, a.id);
       }
 
@@ -117,45 +132,35 @@ export function syncAnchors(api: ExcalidrawImperativeAPI): boolean {
           if (hit) {
             anchors[end] = { elementId: shape.id, fx: hit[0], fy: hit[1] };
             anchorsChanged = true;
-            geom = { ...geom, [end === "start" ? "startBinding" : "endBinding"]: null };
+            geom = { ...geom, [bindingKey]: null };
             shapeUnbind(shape.id, a.id);
-            seen.set(key, { p: pt, e: pt });
             continue;
           }
         }
       }
 
       const anchor = anchors[end];
-      if (!anchor) {
-        seen.delete(key);
-        continue;
-      }
+      if (!anchor) continue;
       const shape = byId.get(anchor.elementId);
       if (!shape || shape.isDeleted) {
         delete anchors[end];
         anchorsChanged = true;
-        seen.delete(key);
         continue;
       }
       const target = toScene(shape, anchor.fx, anchor.fy);
-      const prev = seen.get(key);
-      const targetMoved = !prev || Math.hypot(prev.p[0] - target[0], prev.p[1] - target[1]) > EPS;
-      const pointMoved = !!prev && Math.hypot(prev.e[0] - pt[0], prev.e[1] - pt[1]) > EPS;
-      const offTarget = Math.hypot(target[0] - pt[0], target[1] - pt[1]) > EPS;
+      const dist = Math.hypot(target[0] - pt[0], target[1] - pt[1]);
+      if (dist <= EPS) continue;
 
-      if (offTarget && pointMoved && !targetMoved) {
-        // L'utente ha staccato il punto: l'ancora cade (se lo riaggancia, il binding la ricrea)
+      // 2) L'utente sta trascinando la freccia (o un suo punto) con il mouse, senza la figura:
+      //    oltre qualche pixel l'ancora cade. In ogni altro caso il punto torna sull'ancora.
+      const userDragging = st.cursorButton === "down" && !!selected[a.id] && !selected[shape.id];
+      if (userDragging && dist > DETACH_PX) {
         delete anchors[end];
         anchorsChanged = true;
-        seen.delete(key);
         continue;
       }
-      if (offTarget) {
-        geom = { ...geom, ...withEndpoint({ ...a, ...geom } as LinearLike, end, target) };
-        seen.set(key, { p: target, e: target });
-      } else {
-        seen.set(key, { p: target, e: pt });
-      }
+      if (userDragging) continue;
+      geom = { ...geom, ...withEndpoint({ ...a, ...geom } as LinearLike, end, target) };
     }
 
     if (anchorsChanged) {

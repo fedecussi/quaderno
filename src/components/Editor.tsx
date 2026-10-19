@@ -26,12 +26,14 @@ const PAPER_LABEL: Record<PaperType, string> = { blank: "Bianco", lines: "Righe"
 const SIZE_LABEL: Record<PaperSize, string> = { s: "Piccoli", m: "Medi", l: "Grandi" };
 
 export function Editor({ id, theme }: { id: string; theme: "light" | "dark" }) {
-  const { boards, collections } = useStore();
+  const { boards, collections, settings } = useStore();
   const meta = boards.find((b) => b.id === id);
   const [initial, setInitial] = useState<BoardData | undefined>(undefined);
   const [api, setApi] = useState<ExcalidrawImperativeAPI | null>(null);
   const apiRef = useRef<ExcalidrawImperativeAPI | null>(null);
   apiRef.current = api;
+  const anchorPrefs = useRef({ start: true, end: true });
+  anchorPrefs.current = { start: settings.anchorStart !== false, end: settings.anchorEnd !== false };
   const [saveState, setSaveState] = useState<SaveState>("saved");
   const [sharing, setSharing] = useState(false);
   const [moving, setMoving] = useState(false);
@@ -115,7 +117,7 @@ export function Editor({ id, theme }: { id: string; theme: "light" | "dark" }) {
       // Il foglio (righe/quadretti/puntini) segue pan e zoom della tela
       applyPaperVars(paperRef.current, latest.current?.appState.paper ?? DEFAULT_PAPER, appState.scrollX, appState.scrollY, appState.zoom.value);
       // Punti ancorati a vertici/metà lato: li riportiamo in posizione se la figura si è mossa
-      if (apiRef.current && syncAnchors(apiRef.current)) return;
+      if (apiRef.current && syncAnchors(apiRef.current, anchorPrefs.current)) return;
       const data: BoardData = {
         elements,
         appState: {
