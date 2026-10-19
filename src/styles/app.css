@@ -1561,3 +1561,42 @@ kbd {
   padding: 0 10px;
   font-size: 13px;
 }
+
+/* ===========================================================
+   App desktop macOS (Electron, barra del titolo nascosta)
+   =========================================================== */
+.mac-desktop .sidebar-top {
+  padding-left: 66px;
+  padding-top: 6px;
+  -webkit-app-region: drag;
+}
+.mac-desktop .sidebar-top a {
+  -webkit-app-region: no-drag;
+}
+.mac-desktop .editor-bar {
+  padding-left: 82px;
+  -webkit-app-region: drag;
+}
+.mac-desktop .editor-bar button,
+.mac-desktop .editor-bar input,
+.mac-desktop .editor-bar a,
+.mac-desktop .editor-bar .popover-anchor {
+  -webkit-app-region: no-drag;
+}
+.mac-desktop .topbar {
+  -webkit-app-region: drag;
+}
+.mac-desktop .topbar button,
+.mac-desktop .topbar input,
+.mac-desktop .topbar .search,
+.mac-desktop .topbar .seg {
+  -webkit-app-region: no-drag;
+}
+.mac-desktop .gate-card .logo {
+  margin-top: 8px;
+}
+@media (max-width: 760px) {
+  .mac-desktop .sidebar-top {
+    padding-left: 66px;
+  }
+}

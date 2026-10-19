@@ -1,0 +1,37 @@
+appId: it.quaderno.app
+productName: Quaderno
+copyright: Quaderno · costruito su Excalidraw (MIT)
+directories:
+  output: release
+  buildResources: desktop
+files:
+  - dist-desktop/**
+  - desktop/main.cjs
+  - package.json
+asar: true
+mac:
+  category: public.app-category.productivity
+  icon: desktop/icon.png
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+    - target: zip
+      arch: [arm64, x64]
+  darkModeSupport: true
+  hardenedRuntime: false
+  gatekeeperAssess: false
+  identity: null
+dmg:
+  title: Quaderno
+  iconSize: 96
+  contents:
+    - { x: 140, y: 170, type: file }
+    - { x: 420, y: 170, type: link, path: /Applications }
+  window: { width: 560, height: 360 }
+win:
+  target: [nsis]
+  icon: desktop/icon.png
+linux:
+  target: [AppImage]
+  icon: desktop/icon.png
+  category: Office

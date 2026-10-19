@@ -5,3 +5,5 @@ public/excalidraw-assets
 *.local
 .DS_Store
 quaderno-extension.zip
+dist-desktop
+release

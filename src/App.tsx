@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useRoute } from "./lib/router";
-import { init, useStore } from "./lib/store";
+import { init, useStore, createBoard } from "./lib/store";
+import { navigate } from "./lib/router";
 import { useTheme } from "./lib/useTheme";
 import { Dashboard } from "./components/Dashboard";
 import { Editor } from "./components/Editor";
@@ -16,6 +17,11 @@ export default function App() {
   useEffect(() => {
     init();
   }, []);
+
+  // #/new (menu File dell'app desktop): crea una lavagna e aprila
+  useEffect(() => {
+    if (ready && route.name === "new") createBoard().then((b) => navigate({ name: "board", id: b.id }, true));
+  }, [ready, route]);
 
   useEffect(() => {
     document.title = route.name === "home" ? "Quaderno" : route.name === "shared" ? "Lavagna condivisa · Quaderno" : "Quaderno";

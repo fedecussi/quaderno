@@ -11,7 +11,12 @@
     "build:ext": "node scripts/build-extension.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "icons": "node scripts/make-icons.mjs"
+    "icons": "node scripts/make-icons.mjs",
+    "build:desktop": "node scripts/build-desktop.mjs",
+    "desktop": "npm run build:desktop && electron .",
+    "dist:mac": "npm run build:desktop && electron-builder --mac",
+    "dist:win": "npm run build:desktop && electron-builder --win",
+    "dist:linux": "npm run build:desktop && electron-builder --linux"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "^0.18.1",
@@ -28,8 +33,13 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^44.9.0",
+    "electron-builder": "^26.15.3",
     "typescript": "^5.6.3",
     "vite": "^6.0.0",
     "vite-plugin-pwa": "^0.21.1"
-  }
+  },
+  "main": "desktop/main.cjs",
+  "description": "Lavagne infinite per appunti, schemi e idee.",
+  "author": "fedecussi"
 }

@@ -43,9 +43,17 @@ Poi in `chrome://extensions` attiva *Modalità sviluppatore* → *Carica estensi
 
 Dentro l'estensione i link condivisi devono puntare alla versione pubblicata: inserisci l'URL di GitHub Pages in **Impostazioni → URL pubblico dell'app** (una volta sola).
 
-## App su Mac
+## App desktop (macOS)
 
-Apri l'URL pubblicato (o `npm run preview` in locale) in Chrome e usa *Installa Quaderno* dalla barra degli indirizzi: ottieni un'app con la sua icona nel Dock, che funziona anche offline.
+L'app nativa è un contenitore Electron della stessa build web, con menu macOS, finestra che ricorda dimensione e posizione, download tramite finestra di salvataggio di sistema e link esterni aperti nel browser.
+
+- **Scaricarla**: ogni tag `v*` fa costruire dal workflow `desktop.yml` (runner macOS) i file `.dmg` e `.zip` per Apple Silicon e Intel e li allega a una [Release](https://github.com/fedecussi/quaderno/releases). Si può anche avviare a mano da *Actions → App desktop (macOS) → Run workflow* e scaricare l'artefatto.
+- **Primo avvio**: l'app non è firmata con un certificato Apple, quindi macOS la blocca una volta. Apri *Impostazioni di Sistema → Privacy e sicurezza* e premi *Apri comunque*, oppure da Terminale: `xattr -cr /Applications/Quaderno.app`.
+- **In locale**: `npm run desktop` avvia l'app in sviluppo; `npm run dist:mac` crea i pacchetti in `release/` (serve un Mac).
+
+Le lavagne dell'app desktop stanno nel suo profilo (`~/Library/Application Support/Quaderno`), separate da quelle del browser.
+
+In alternativa, senza installare nulla: apri l'URL pubblicato in Chrome e usa *Installa Quaderno* dalla barra degli indirizzi (PWA), che funziona anche offline.
 
 ## Come funzionano i link condivisi
 
@@ -76,5 +84,7 @@ scripts/      copia asset, generazione icone, build estensione
 | `npm run dev` | sviluppo locale |
 | `npm run build` | build web in `dist/` (PWA inclusa) |
 | `npm run build:ext` | build estensione Chrome in `dist-extension/` |
+| `npm run desktop` | app desktop in sviluppo (Electron) |
+| `npm run dist:mac` | pacchetti macOS `.dmg`/`.zip` in `release/` |
 | `npm run typecheck` | controllo TypeScript |
 | `npm run icons` | rigenera le icone PNG da `public/favicon.svg` (`CHROMIUM_PATH` opzionale) |

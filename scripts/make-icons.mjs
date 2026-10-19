@@ -8,12 +8,14 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const svg = readFileSync(join(root, "public/favicon.svg"), "utf8");
 mkdirSync(join(root, "public/icons"), { recursive: true });
 mkdirSync(join(root, "extension/icons"), { recursive: true });
+mkdirSync(join(root, "desktop"), { recursive: true });
 
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
 const page = await browser.newPage();
 const targets = [
   ...[192, 512].map((s) => [s, join(root, `public/icons/icon-${s}.png`)]),
   ...[16, 32, 48, 128].map((s) => [s, join(root, `extension/icons/icon-${s}.png`)]),
+  [1024, join(root, "desktop/icon.png")],
 ];
 for (const [size, path] of targets) {
   await page.setViewportSize({ width: size, height: size });

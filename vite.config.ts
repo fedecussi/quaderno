@@ -5,6 +5,7 @@ import { VitePWA } from "vite-plugin-pwa";
 // BASE_PATH: "/" in locale, "/<nome-repo>/" su GitHub Pages, "./" per l'estensione Chrome.
 const base = process.env.BASE_PATH || "/";
 const isExtension = process.env.BUILD_TARGET === "extension";
+const isDesktop = process.env.BUILD_TARGET === "desktop";
 
 export default defineConfig({
   base,
@@ -12,6 +13,7 @@ export default defineConfig({
     react(),
     // Il service worker serve solo alla versione web (PWA installabile su Mac).
     !isExtension &&
+      !isDesktop &&
       VitePWA({
         registerType: "autoUpdate",
         includeAssets: ["favicon.svg", "icons/*.png"],
@@ -45,7 +47,7 @@ export default defineConfig({
       }),
   ].filter(Boolean),
   build: {
-    outDir: isExtension ? "dist-extension" : "dist",
+    outDir: isExtension ? "dist-extension" : isDesktop ? "dist-desktop" : "dist",
     emptyOutDir: true,
     target: "es2022",
     chunkSizeWarningLimit: 3000,

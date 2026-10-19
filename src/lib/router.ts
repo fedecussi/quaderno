@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 export type Route =
   | { name: "home"; filter: HomeFilter }
   | { name: "board"; id: string }
-  | { name: "shared"; payload: string };
+  | { name: "shared"; payload: string }
+  | { name: "new" };
 
 export type HomeFilter =
   | { kind: "all" }
@@ -21,6 +22,8 @@ export function parseHash(hash: string): Route {
       return rest ? { name: "board", id: rest } : { name: "home", filter: { kind: "all" } };
     case "s":
       return { name: "shared", payload: rest };
+    case "new":
+      return { name: "new" };
     case "favorites":
       return { name: "home", filter: { kind: "favorites" } };
     case "trash":
@@ -38,6 +41,8 @@ export function hrefFor(route: Route): string {
       return `#/b/${route.id}`;
     case "shared":
       return `#/s/${route.payload}`;
+    case "new":
+      return "#/new";
     case "home":
       switch (route.filter.kind) {
         case "favorites":
