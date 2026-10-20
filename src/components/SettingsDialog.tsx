@@ -6,7 +6,7 @@ import { Button, Modal, toast } from "./ui";
 import { setSettings, useStore } from "../lib/store";
 import { estimateUsage } from "../lib/db";
 import { formatBytes } from "../lib/format";
-import { isExtensionContext, publicBaseUrl } from "../lib/share";
+import { isExtensionContext, publicBaseUrl, normalizePublicUrl } from "../lib/share";
 
 export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { settings, sync, boards } = useStore();
@@ -50,7 +50,9 @@ export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () =
           <Button
             variant="primary"
             onClick={() => {
-              setSettings({ publicUrl: url.trim() });
+              const fixed = normalizePublicUrl(url);
+              if (fixed !== url.trim()) toast(`Indirizzo corretto in ${fixed} (era quello del repository)`);
+              setSettings({ publicUrl: fixed });
               onClose();
             }}
           >
@@ -114,7 +116,12 @@ export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () =
           Non c'entra con la sincronizzazione: è solo la base dei link condivisi. {isExtensionContext() ? "Nell'estensione va impostato: " : "Sul web e nell'app desktop è già corretto. "}
           Se serve, inserisci l'indirizzo dove è pubblicato Quaderno.
         </p>
-        <input className="input mono" placeholder="https://tuonome.github.io/quaderno/" value={url} onChange={(e) => setUrl(e.target.value)} />
+        <div className="share-link">
+          <input className="input mono" placeholder="https://tuonome.github.io/quaderno/" value={url} onChange={(e) => setUrl(e.target.value)} />
+          <Button size="sm" onClick={() => setUrl("")} title="Torna all'indirizzo predefinito">
+            Predefinito
+          </Button>
+        </div>
         {effective && <p className="muted small">I link avranno la forma: {effective}#/s/…</p>}
       </details>
 

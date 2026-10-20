@@ -22,6 +22,8 @@ export function SharedView({ payload: fragment, theme }: { payload: string; them
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [pdfOpen, setPdfOpen] = useState(false);
+  const paperRef = useRef<HTMLDivElement>(null);
+  const paper = payload?.data.appState.paper ?? { type: "blank" as const, size: "m" as const };
 
   async function open(pw?: string) {
     setBusy(true);
@@ -98,8 +100,6 @@ export function SharedView({ payload: fragment, theme }: { payload: string; them
     );
   }
 
-  const paper = payload.data.appState.paper ?? { type: "blank" as const, size: "m" as const };
-  const paperRef = useRef<HTMLDivElement>(null);
   const meta = { id: "shared", title: payload.title, collectionId: null, favorite: false, createdAt: payload.sharedAt, updatedAt: payload.sharedAt, deletedAt: null, elementCount: 0 };
 
   return (

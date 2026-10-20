@@ -30,6 +30,8 @@ http
         res.writeHead(200, { "content-type": "text/plain", "access-control-allow-origin": "*" });
         return res.end(g.files[name]);
       }
+      const pub = url.pathname.match(/^\/gists\/([a-f0-9]+)$/);
+      if (pub && req.method === "GET" && !auth) { const g = gists.get(pub[1]); return g ? json(res, 200, view(g)) : json(res, 404, {}); }
       if (!auth.startsWith("Bearer ghp_")) return json(res, 401, { message: "bad credentials" });
       const login = auth.slice("Bearer ghp_".length);
       if (url.pathname === "/user") return json(res, 200, { login });

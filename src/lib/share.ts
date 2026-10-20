@@ -5,9 +5,11 @@
  * Il risultato vive nel frammento dell'URL (#/s/...), che il browser non invia mai al server:
  * chi ospita l'app non può leggere il contenuto, esattamente come fa excalidraw.com.
  *
- * Formato: #/s/1.<k|p>.<chiave-o-salt>.<dati>
- *   k = la chiave è nel link (chi ha il link apre la lavagna)
- *   p = la chiave deriva da una password (PBKDF2); nel link c'è solo il salt
+ * Formato: #/s/1.<k|p|g|gp>.<chiave-o-salt>.<dati-o-id>
+ *   k  = la chiave è nel link (chi ha il link apre la lavagna), dati nel link
+ *   p  = la chiave deriva da una password (PBKDF2); nel link c'è solo il salt, dati nel link
+ *   g  = come k, ma i dati cifrati stanno in un gist segreto su GitHub (link breve)
+ *   gp = come p, con i dati nel gist
  */
 import type { BoardData } from "./types";
 
@@ -20,6 +22,8 @@ export interface SharePayload {
 export interface ShareOptions {
   password?: string;
   includeFiles?: boolean;
+  /** Token GitHub con permesso gist: i dati cifrati vanno in un gist segreto e il link resta breve. */
+  gistToken?: string;
 }
 
 export class SharePasswordRequired extends Error {}
@@ -115,53 +119,106 @@ function deserialize(bytes: Uint8Array): SharePayload {
 
 /* ---------- API ---------- */
 
+function gistApi(): string {
+  try {
+    return localStorage.getItem("quaderno:gistApi") || "https://api.github.com";
+  } catch {
+    return "https://api.github.com";
+  }
+}
+const GIST_FILE = "quaderno-lavagna.txt";
+
+async function uploadToGist(cipher: string, token: string, title: string): Promise<string> {
+  const res = await fetch(`${gistApi()}/gists`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json", "Content-Type": "application/json", "X-GitHub-Api-Version": "2022-11-28" },
+    body: JSON.stringify({ description: `Quaderno · lavagna condivisa: ${title || "senza titolo"} (contenuto cifrato)`, public: false, files: { [GIST_FILE]: { content: cipher } } }),
+  });
+  if (res.status === 401) throw new ShareInvalid("Token GitHub non valido: ricollega la sincronizzazione");
+  if (!res.ok) throw new ShareInvalid(`GitHub ha risposto ${res.status}`);
+  return ((await res.json()) as { id: string }).id;
+}
+
+async function downloadFromGist(id: string): Promise<string> {
+  const res = await fetch(`${gistApi()}/gists/${id}`, { headers: { Accept: "application/vnd.github+json" } });
+  if (res.status === 404) throw new ShareInvalid("Lavagna non trovata: il gist è stato eliminato");
+  if (res.status === 403) throw new ShareInvalid("Troppe richieste a GitHub da questa rete: riprova tra qualche minuto");
+  if (!res.ok) throw new ShareInvalid(`GitHub ha risposto ${res.status}`);
+  const g = (await res.json()) as { files: Record<string, { content?: string; truncated?: boolean; raw_url: string }> };
+  const f = g.files[GIST_FILE] ?? Object.values(g.files)[0];
+  if (!f) throw new ShareInvalid("Gist vuoto");
+  if (!f.truncated && typeof f.content === "string") return f.content;
+  const raw = await fetch(f.raw_url);
+  if (!raw.ok) throw new ShareInvalid("Impossibile scaricare la lavagna");
+  return raw.text();
+}
+
 /** Crea il frammento (senza "#/s/") e restituisce anche la dimensione in byte. */
-export async function encodeShare(payload: SharePayload, opts: ShareOptions = {}): Promise<{ fragment: string; bytes: number }> {
+export async function encodeShare(payload: SharePayload, opts: ShareOptions = {}): Promise<{ fragment: string; bytes: number; gist?: boolean }> {
   const plain = serialize(payload, !!opts.includeFiles);
   const packed = await compress(plain);
-  let fragment: string;
+  let keyPart: string, data: string, mode: string;
   if (opts.password) {
     const salt = crypto.getRandomValues(new Uint8Array(16));
     const key = await deriveKey(opts.password, salt);
-    const ct = await encrypt(key, packed);
-    fragment = `${VERSION}.p.${toB64url(salt)}.${toB64url(ct)}`;
+    data = toB64url(await encrypt(key, packed));
+    keyPart = toB64url(salt);
+    mode = "p";
   } else {
     const { key, raw } = await randomKey();
-    const ct = await encrypt(key, packed);
-    fragment = `${VERSION}.k.${toB64url(raw)}.${toB64url(ct)}`;
+    data = toB64url(await encrypt(key, packed));
+    keyPart = toB64url(raw);
+    mode = "k";
   }
+  if (opts.gistToken) {
+    const id = await uploadToGist(data, opts.gistToken, payload.title);
+    const fragment = `${VERSION}.g${mode === "p" ? "p" : ""}.${keyPart}.${id}`;
+    return { fragment, bytes: fragment.length, gist: true };
+  }
+  const fragment = `${VERSION}.${mode}.${keyPart}.${data}`;
   return { fragment, bytes: fragment.length };
 }
 
 export function shareNeedsPassword(fragment: string): boolean {
-  return fragment.split(".")[1] === "p";
+  const m = fragment.split(".")[1];
+  return m === "p" || m === "gp";
+}
+export function shareIsGist(fragment: string): boolean {
+  const m = fragment.split(".")[1];
+  return m === "g" || m === "gp";
 }
 
 /** Decodifica un frammento. Lancia SharePasswordRequired se serve la password, ShareInvalid se corrotto o password errata. */
 export async function decodeShare(fragment: string, password?: string): Promise<SharePayload> {
   const parts = fragment.split(".");
   if (parts.length !== 4 || parts[0] !== VERSION) throw new ShareInvalid("Link non valido");
-  const [, mode, keyOrSalt, data] = parts;
-  let key: CryptoKey;
-  if (mode === "p") {
-    if (!password) throw new SharePasswordRequired();
-    key = await deriveKey(password, fromB64url(keyOrSalt));
-  } else if (mode === "k") {
-    key = await importKey(fromB64url(keyOrSalt));
-  } else throw new ShareInvalid("Link non valido");
+  const [, mode, keyOrSalt, dataOrId] = parts;
+  const withPassword = mode === "p" || mode === "gp";
+  const viaGist = mode === "g" || mode === "gp";
+  if (!["k", "p", "g", "gp"].includes(mode)) throw new ShareInvalid("Link non valido");
+  if (withPassword && !password) throw new SharePasswordRequired();
+  const key = withPassword ? await deriveKey(password!, fromB64url(keyOrSalt)) : await importKey(fromB64url(keyOrSalt));
+  const data = viaGist ? await downloadFromGist(dataOrId) : dataOrId;
   let packed: Uint8Array;
   try {
-    packed = await decrypt(key, fromB64url(data));
+    packed = await decrypt(key, fromB64url(data.trim()));
   } catch {
-    throw new ShareInvalid(mode === "p" ? "Password errata" : "Link danneggiato");
+    throw new ShareInvalid(withPassword ? "Password errata" : "Link danneggiato");
   }
   return deserialize(await decompress(packed));
 }
 
 /** Base pubblica dell'app per costruire link apribili da chiunque. */
+/** Se l'utente incolla l'indirizzo del repository GitHub, lo trasforma nell'indirizzo del sito pubblicato (GitHub Pages). */
+export function normalizePublicUrl(url: string): string {
+  const m = url.trim().match(/^https?:\/\/(?:www\.)?github\.com\/([^/\s]+)\/([^/\s#?]+)/i);
+  if (m) return `https://${m[1].toLowerCase()}.github.io/${m[2].replace(/\.git$/, "")}/`;
+  return url.trim();
+}
+
 export function publicBaseUrl(configured: string): string {
   const fromEnv = (import.meta.env.VITE_PUBLIC_APP_URL as string | undefined) ?? "";
-  let base = (configured || fromEnv || "").trim();
+  let base = normalizePublicUrl(configured || fromEnv || "");
   if (!base) {
     // Nell'estensione Chrome l'URL non è apribile da altri: in quel caso serve la base configurata.
     if (location.protocol.startsWith("http")) base = location.origin + location.pathname;

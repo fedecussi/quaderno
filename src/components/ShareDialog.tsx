@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link2, Lock, Copy, Check, Image as ImageIcon, AlertTriangle, ExternalLink } from "lucide-react";
+import { Link2, Lock, Copy, Check, Image as ImageIcon, AlertTriangle, ExternalLink, Cloud } from "lucide-react";
 import { Button, Modal, toast } from "./ui";
 import type { BoardData, BoardMeta } from "../lib/types";
 import { loadBoardData } from "../lib/db";
@@ -16,6 +16,8 @@ export function ShareDialog({ board, data: given, onClose }: { board: BoardMeta;
   const [usePassword, setUsePassword] = useState(false);
   const [password, setPassword] = useState("");
   const [includeFiles, setIncludeFiles] = useState(true);
+  const canGist = !!settings.syncToken;
+  const [viaGist, setViaGist] = useState(false);
   const [link, setLink] = useState<{ url: string; bytes: number } | null>(null);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -25,6 +27,10 @@ export function ShareDialog({ board, data: given, onClose }: { board: BoardMeta;
   }, [board.id, given]);
 
   const hasImages = useMemo(() => Object.keys(data?.files ?? {}).length > 0, [data]);
+  const bigBoard = useMemo(() => (data ? JSON.stringify(data.elements).length > 60_000 : false), [data]);
+  useEffect(() => {
+    if (canGist && bigBoard) setViaGist(true);
+  }, [canGist, bigBoard]);
   const base = publicBaseUrl(settings.publicUrl);
   const baseMissing = !base;
 
@@ -32,12 +38,14 @@ export function ShareDialog({ board, data: given, onClose }: { board: BoardMeta;
     if (!data) return;
     setBusy(true);
     try {
-      const { fragment, bytes } = await encodeShare({ title: board.title, data, sharedAt: Date.now() }, { password: usePassword ? password : undefined, includeFiles });
+      const { fragment, bytes } = await encodeShare({ title: board.title, data, sharedAt: Date.now() }, { password: usePassword ? password : undefined, includeFiles, gistToken: viaGist && canGist ? settings.syncToken : undefined });
       if (bytes > HARD_LIMIT) {
-        toast("La lavagna è troppo grande per un link. Prova senza immagini o esportala come file.", "error");
+        toast("La lavagna è troppo grande per un link. Prova senza immagini, oppure attiva il link breve.", "error");
         return;
       }
       setLink({ url: `${base}#/s/${fragment}`, bytes });
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Creazione del link fallita", "error");
     } finally {
       setBusy(false);
     }
@@ -52,7 +60,7 @@ export function ShareDialog({ board, data: given, onClose }: { board: BoardMeta;
   }
 
   // Rigenera se cambiano le opzioni
-  useEffect(() => setLink(null), [usePassword, password, includeFiles]);
+  useEffect(() => setLink(null), [usePassword, password, includeFiles, viaGist]);
 
   return (
     <Modal open onClose={onClose} title={<><Link2 size={18} /> Condividi “{boardTitle(board.title)}”</>} width={480}>
@@ -87,6 +95,13 @@ export function ShareDialog({ board, data: given, onClose }: { board: BoardMeta;
           <span>Includi le immagini (rende il link più lungo)</span>
         </label>
       )}
+      <label className="option" title={canGist ? "" : "Collega la sincronizzazione GitHub nelle Impostazioni per avere i link brevi"}>
+        <input type="checkbox" checked={viaGist} disabled={!canGist} onChange={(e) => setViaGist(e.target.checked)} />
+        <Cloud size={15} />
+        <span>
+          Link breve: la lavagna cifrata va in un gist segreto sul tuo GitHub{!canGist && " (serve la sincronizzazione collegata)"}
+        </span>
+      </label>
 
       {!link ? (
         <div className="modal-foot inline">
@@ -106,7 +121,7 @@ export function ShareDialog({ board, data: given, onClose }: { board: BoardMeta;
           <div className="share-info">
             <span className={link.bytes > SOFT_LIMIT ? "warn-text" : ""}>
               Lunghezza link: {formatBytes(link.bytes)}
-              {link.bytes > SOFT_LIMIT && " · link lungo, alcune app di messaggistica potrebbero troncarlo. Meglio inviarlo via email o come file."}
+              {link.bytes > SOFT_LIMIT && (canGist ? " · link lungo: attiva \"Link breve\" qui sopra." : " · link lungo, alcune app di messaggistica potrebbero troncarlo. Meglio inviarlo via email o come file.")}
             </span>
             <a href={link.url} target="_blank" rel="noreferrer" className="link-inline">
               Anteprima <ExternalLink size={13} />

@@ -77,7 +77,9 @@ Il file `.excalidraw` prodotto si trascina in Quaderno (o *Importa* nella barra 
 
 Il link ha la forma `https://…/#/s/1.k.<chiave>.<dati>`. La parte dopo `#` non viene mai inviata al server: contiene la lavagna serializzata, compressa (deflate) e cifrata (AES-GCM 128). Con la password, la chiave viene derivata con PBKDF2 (250 000 iterazioni) e nel link c'è solo il salt.
 
-Limiti: il link è una "fotografia" della lavagna (le modifiche successive non si propagano) e la sua lunghezza cresce con il contenuto. Una lavagna di appunti tipica produce link di pochi KB; sopra i 60 KB l'app avvisa, perché alcune app di messaggistica troncano gli URL lunghi (via email o come file non c'è problema).
+Limiti: il link è una "fotografia" della lavagna (le modifiche successive non si propagano) e la sua lunghezza cresce con il contenuto. Una lavagna di appunti tipica produce link di pochi KB; sopra i 60 KB l'app avvisa, perché alcune app di messaggistica troncano gli URL lunghi.
+
+**Link breve.** Con la sincronizzazione GitHub collegata, l'opzione "Link breve" carica la lavagna cifrata in un gist segreto del tuo account e il link resta di poche decine di caratteri (`#/s/1.g.<chiave>.<id-gist>`). La chiave resta solo nel link: GitHub conserva dati illeggibili. Chi apre il link non ha bisogno di account. Per revocare un link basta eliminare il gist.
 
 ## Note
 
