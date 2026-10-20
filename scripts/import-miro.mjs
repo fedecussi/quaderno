@@ -261,9 +261,10 @@ async function miro(path, token) {
   const res = await fetch(`${API}${path}`, { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
   if (res.status === 401) throw new Error("Token Miro non valido (401)");
   if (res.status === 404) throw new Error("Board non trovato: controlla l'id e che l'app sia installata nel team del board");
-  if (res.status === 429) {
-    await new Promise((r) => setTimeout(r, 2000));
-    return miro(path, token);
+  if (res.status === 429 || (res.status >= 500 && !path.includes("__retry"))) {
+    await new Promise((r) => setTimeout(r, res.status === 429 ? 2000 : 800));
+    const sep = path.includes("?") ? "&" : "?";
+    return miro(`${path}${sep}__retry=1`, token);
   }
   if (!res.ok) throw new Error(`Miro ha risposto ${res.status}: ${await res.text()}`);
   return res.json();
@@ -311,8 +312,30 @@ async function main() {
   const boardId = parseBoardId(boardArg);
   const board = await miro(`/boards/${encodeURIComponent(boardId)}`, token);
   console.log(`Board: ${board.name}`);
-  const items = await pageAll(`/boards/${encodeURIComponent(boardId)}/items`, token);
-  const connectors = await pageAll(`/boards/${encodeURIComponent(boardId)}/connectors`, token);
+  const bid = encodeURIComponent(boardId);
+  let items;
+  try {
+    items = await pageAll(`/boards/${bid}/items`, token);
+  } catch (e) {
+    // L'elenco generale fallisce su alcuni board (errore 500 di Miro): si va per tipo, saltando quelli che falliscono
+    console.warn(`! elenco generale non disponibile (${e.message.split("\n")[0]}): leggo gli elementi tipo per tipo`);
+    items = [];
+    for (const type of ["frame", "shape", "sticky_note", "text", "image", "card", "app_card", "document", "embed"]) {
+      try {
+        const part = await pageAll(`/boards/${bid}/items?type=${type}`, token);
+        if (part.length) console.log(`  ${type}: ${part.length}`);
+        items.push(...part);
+      } catch (err) {
+        console.warn(`  ${type}: saltato (${err.message.split("\n")[0]})`);
+      }
+    }
+  }
+  let connectors = [];
+  try {
+    connectors = await pageAll(`/boards/${bid}/connectors`, token);
+  } catch (e) {
+    console.warn(`! connettori non disponibili (${e.message.split("\n")[0]}): le frecce non verranno importate`);
+  }
   console.log(`Elementi: ${items.length} · connettori: ${connectors.length}`);
   if (!args.includes("--no-images")) {
     for (const it of items.filter((i) => i.type === "image")) await downloadImage(it, token).catch(() => {});
