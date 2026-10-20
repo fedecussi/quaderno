@@ -62,6 +62,17 @@ Non c'è un server di Quaderno: le lavagne vengono salvate in un gist *privato* 
 
 Si sincronizza all'avvio, quando la finestra torna in primo piano, ogni 5 minuti e pochi secondi dopo ogni modifica. Vince la modifica più recente; se una lavagna è stata modificata su due dispositivi senza sincronizzare, la versione locale viene conservata come "(copia locale)". Le eliminazioni definitive si propagano.
 
+## Importare un board da Miro
+
+Miro esporta solo immagini e PDF, quindi si passa dalle sue API. Serve un token: su [developer.miro.com](https://developers.miro.com/) → *Your apps* → *Create new app*, permesso `boards:read`, poi *Install app and get OAuth token* nel team del board. L'id del board è nella URL (`https://miro.com/app/board/uXjVK1234=/` → `uXjVK1234=`).
+
+```bash
+MIRO_TOKEN=il_tuo_token node scripts/import-miro.mjs "https://miro.com/app/board/uXjVK1234=/"
+# opzioni: --out nome.excalidraw · --font clean (testo pulito invece di scritto a mano) · --no-images
+```
+
+Il file `.excalidraw` prodotto si trascina in Quaderno (o *Importa* nella barra laterale). Vengono convertiti forme (rettangoli, arrotondati, cerchi, rombi; le altre diventano rettangoli), sticky note, testi, connettori con etichette (ancorati ai punti scelti in Miro), frame e immagini. Non vengono convertiti elementi senza equivalente (mindmap, tabelle, kanban, documenti incorporati).
+
 ## Come funzionano i link condivisi
 
 Il link ha la forma `https://…/#/s/1.k.<chiave>.<dati>`. La parte dopo `#` non viene mai inviata al server: contiene la lavagna serializzata, compressa (deflate) e cifrata (AES-GCM 128). Con la password, la chiave viene derivata con PBKDF2 (250 000 iterazioni) e nel link c'è solo il salt.

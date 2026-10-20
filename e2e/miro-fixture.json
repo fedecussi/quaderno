@@ -1,0 +1,14 @@
+{
+  "items": [
+    { "id": "f1", "type": "frame", "data": { "title": "Flusso onboarding" }, "geometry": { "width": 900, "height": 500 }, "position": { "x": 0, "y": 0, "origin": "center", "relativeTo": "canvas_center" } },
+    { "id": "s1", "type": "shape", "parent": { "id": "f1" }, "data": { "shape": "round_rectangle", "content": "<p>Registrazione</p>" }, "style": { "fillColor": "#d0ebff", "borderColor": "#1c7ed6", "fontSize": "18", "textAlign": "center" }, "geometry": { "width": 200, "height": 100 }, "position": { "x": 150, "y": 250, "origin": "center", "relativeTo": "parent_top_left" } },
+    { "id": "s2", "type": "shape", "parent": { "id": "f1" }, "data": { "shape": "rhombus", "content": "<p>Email<br>verificata?</p>" }, "style": { "fillColor": "#fff3bf", "borderColor": "#f08c00", "fontSize": "14" }, "geometry": { "width": 180, "height": 120 }, "position": { "x": 450, "y": 250, "origin": "center", "relativeTo": "parent_top_left" } },
+    { "id": "s3", "type": "shape", "parent": { "id": "f1" }, "data": { "shape": "circle", "content": "<p>Fine</p>" }, "style": { "fillColor": "#d3f9d8", "borderColor": "#2f9e44" }, "geometry": { "width": 120, "height": 120 }, "position": { "x": 760, "y": 250, "origin": "center", "relativeTo": "parent_top_left" } },
+    { "id": "n1", "type": "sticky_note", "data": { "content": "<p>Ricordarsi il <b>double opt-in</b> &amp; GDPR</p>" }, "style": { "fillColor": "light_yellow", "fontSize": "14" }, "geometry": { "width": 200, "height": 200 }, "position": { "x": -600, "y": -100, "origin": "center", "relativeTo": "canvas_center" } },
+    { "id": "t1", "type": "text", "data": { "content": "<p>Appunti dalla riunione del 3/10</p>" }, "style": { "fontSize": "24", "color": "#5b4de6" }, "geometry": { "width": 400 }, "position": { "x": -400, "y": -400, "origin": "center", "relativeTo": "canvas_center" } }
+  ],
+  "connectors": [
+    { "id": "c1", "startItem": { "id": "s1", "position": { "x": "100%", "y": "50%" } }, "endItem": { "id": "s2", "position": { "x": "0%", "y": "50%" } }, "shape": "straight", "style": { "strokeColor": "#1e1e1e", "endStrokeCap": "arrow" } },
+    { "id": "c2", "startItem": { "id": "s2", "position": { "x": "100%", "y": "50%" } }, "endItem": { "id": "s3", "position": { "x": "0%", "y": "50%" } }, "shape": "curved", "style": { "strokeStyle": "dashed", "endStrokeCap": "arrow" }, "captions": [{ "content": "sì" }] }
+  ]
+}

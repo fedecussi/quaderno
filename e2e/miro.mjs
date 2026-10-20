@@ -1,0 +1,30 @@
+// Converte il fixture Miro e lo importa in Quaderno per verificare che Excalidraw lo legga.
+import { readFileSync, writeFileSync } from "node:fs";
+import { convert } from "../scripts/import-miro.mjs";
+import { chromium } from "@playwright/test";
+const S = process.env.SHOTS || ".";
+const fx = JSON.parse(readFileSync("e2e/miro-fixture.json", "utf8"));
+const scene = convert(fx.items, fx.connectors, { font: "hand" });
+writeFileSync(`${S}/miro-test.excalidraw`, JSON.stringify(scene));
+console.log("elementi:", scene.elements.map((e) => e.type).join(", "));
+const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
+const page = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
+const errors = [];
+page.on("pageerror", (e) => errors.push(e.message));
+page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+await page.goto("http://localhost:4173/#/");
+await page.waitForSelector(".sidebar");
+await page.setInputFiles('input[type=file]', `${S}/miro-test.excalidraw`);
+await page.waitForSelector(".card", { timeout: 15000 });
+await page.click(".card");
+await page.waitForSelector(".excalidraw");
+await page.waitForTimeout(1500);
+await page.screenshot({ path: `${S}/95-miro-import.png` });
+const id = (await page.evaluate(() => location.hash)).split("/b/")[1];
+const n = await page.evaluate(async (id) => {
+  const db = await new Promise((res) => { const r = indexedDB.open("quaderno"); r.onsuccess = () => res(r.result); });
+  const d = await new Promise((res) => { const t = db.transaction("kv").objectStore("kv").get("board:" + id); t.onsuccess = () => res(t.result); });
+  return d.elements.filter((e) => !e.isDeleted).length;
+}, id);
+console.log("elementi importati nella lavagna:", n, "| ERRORS:", errors.length ? errors : "none");
+await browser.close();
